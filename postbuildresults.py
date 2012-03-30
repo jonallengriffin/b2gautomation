@@ -78,7 +78,7 @@ if __name__ == "__main__":
         error = []
         for line in tail:
             if 'error' in line.lower() or 'fail' in line.lower():
-            error.append(line.strip())
+                error.append(line.strip())
         if error:
             error = '\n'.join(error)
         else:
