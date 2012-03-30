@@ -70,13 +70,19 @@ if __name__ == "__main__":
     log = os.path.join(builddir, 'log')
 
     # see if this log shows a success
-    tail = tailer.tail(open(log), 50)
+    tail = tailer.tail(open(log), 500)
     logfile = None
     error = None
     if 'BUILD SUCCEEDED' not in ''.join(tail):
         # not successful, get more lines to write to output log
-        tail = tailer.tail(open(log), 300)
-        error = '\n'.join(tail[-3:])
+        error = []
+        for line in tail:
+            if 'error' in line.lower() or 'fail' in line.lower():
+            error.append(line.strip())
+        if error:
+            error = '\n'.join(error)
+        else:
+            error = "build failed, see log"
         logfile = os.path.join(os.path.dirname(log), 'autolog_log')
         f = open(logfile, 'w')
         f.writelines(["%s\n" % x for x in tail])
