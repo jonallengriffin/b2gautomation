@@ -61,7 +61,7 @@ if __name__ == "__main__":
             raise Exception("workspace directory not found")
 
     # get the get revision number
-    commit = open(os.path.join(startdir, 'git.revision'), 'r').read()
+    commit = open(os.path.join(startdir, 'git.revision'), 'r').read().strip()
     print 'commit: ', commit
 
     # locate the log inside the newest build dir
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     tail = tailer.tail(open(log), 50)
     logfile = None
     error = None
-    if 'Finished: SUCCESS' not in ''.join(tail):
+    if 'BUILD SUCCEEDED' not in ''.join(tail):
         # not successful, get more lines to write to output log
         tail = tailer.tail(open(log), 300)
         error = '\n'.join(tail[-3:])
