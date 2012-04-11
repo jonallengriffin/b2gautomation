@@ -1,7 +1,37 @@
 from git import *
+import json
 from optparse import OptionParser
 import os
 import sys
+
+def write_tags(repopath, tagfilepath):
+    taglist = tags(repopath)
+    f = open(tagfilepath, 'w')
+    f.write(json.dumps(taglist))
+    return taglist
+
+def check_for_new_tags(repopath, tagfilepath):
+    try:
+        f = open(tagfilepath, 'r')
+        old_tags = json.loads(f.read())
+        f.close()
+    except IOError:
+        write_new_tags(repopath, tagfilepath)
+        print 'None'
+
+    current_tags = write_tags(repopath, tagfilepath)
+    new_tags = list(set(current_tags) - set(old_tags))
+    if new_tags:
+        print new_tags[0]
+    else:
+        print 'None'
+
+def tags(repopath):
+    tags = []
+    b2g = Repo(repopath)
+    for tag in b2g.tags:
+        tags.append(tag.name)
+    return tags
 
 def updategaia(repopath):
     b2g = Repo(repopath)
@@ -48,6 +78,14 @@ if __name__ == '__main__':
     parser.add_option("--repo",
                       action = "store", dest = "repo",
                       help = "path to B2G repo")
+    parser.add_option("--newtags",
+                      action = "store_true", dest = "newtags",
+                      help = "prints any new tag which has been added since "
+                      "this was last called")
+    parser.add_option("--tagfile",
+                      action = "store", dest = "tagfile",
+                      default = "tags.json",
+                      help = "file used to store a list of tags")
     parser.add_option("--updategaia",
                       action = "store_true", dest = "updategaia",
                       help = "update the Gaia submodule to HEAD")
@@ -57,12 +95,14 @@ if __name__ == '__main__':
     options, tests = parser.parse_args()
 
     if not options.repo:
-        raise 'must specify --repo /path/to/B2G'
+        raise Exception('must specify --repo /path/to/B2G')
 
     if options.updategaia:
         updategaia(options.repo)
     elif options.commitgaia:
         commitgaia(options.repo)
+    elif options.newtags:
+        check_for_new_tags(options.repo, options.tagfile)
     else:
-        raise 'No command specified'
+        raise Exception('No command specified')
 
