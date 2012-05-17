@@ -13,8 +13,8 @@ flash-image:
 	$(FASTBOOT) erase cache && \
 	$(FASTBOOT) erase userdata && \
 	$(FASTBOOT) flash userdata userdata.img && \
-	$(FASTBOOT) flash boot boot.img &&
-	$(FASTBOOT) flash system system.img &&
+	$(FASTBOOT) flash boot boot.img && \
+	$(FASTBOOT) flash system system.img && \
 	$(ADB) reboot
 
 TIMEZONE ?= $(shell date +%Z%:::z|tr +- -+)
