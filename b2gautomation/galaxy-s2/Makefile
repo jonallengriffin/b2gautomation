@@ -16,9 +16,9 @@ flash-image:
 	$(ADB) wait-for-device push b2g system/b2g && \
 	echo done
 	echo Updating gaia ... && \
-	$(ADB) rm -rf /cache/* && \
-	$(ADB) rm -rf /data/local/* && \
-	$(ADB) push local data/local && \
+	$(ADB) shell rm -rf /cache/* && \
+	$(ADB) shell rm -rf /data/local/* && \
+	$(ADB) push local /data/local && \
 	$(ADB) reboot && \
 	echo done
 
