@@ -15,8 +15,7 @@ flash-image:
 	$(FASTBOOT) flash userdata userdata.img && \
 	$(FASTBOOT) flash boot boot.img && \
 	$(FASTBOOT) flash system system.img && \
-	sleep 10 && \
-	$(ADB) reboot
+	$(FASTBOOT) reboot
 
 TIMEZONE ?= $(shell date +%Z%:::z|tr +- -+)
 .PHONY: update-time
