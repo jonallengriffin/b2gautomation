@@ -23,7 +23,9 @@ def update_manifest(src_dom, src_manifest, dest_manifest):
             src_path = src_project.getAttribute('path')
             src_name = src_project.getAttribute('name')
             src_revision = src_project.getAttribute('revision')
-            if dest_path == src_path and dest_name == src_name and src_revision:
+            if (dest_path == src_path and dest_name == src_name
+                                      and src_revision
+                                      and dest_project.hasAttribute('revision')):
                 dest_project.setAttribute('revision', src_revision)
 
     f = open(dest_manifest, 'w')
