@@ -6,9 +6,9 @@ flash: flash-image update-time
 
 .PHONY: flash-image
 flash-image:
-	echo Flashing kernel and system ... && \
-	$(ADB) reboot download && \
-	sleep 20 && \
+	echo Flashing kernel and system ...
+	- $(ADB) reboot download && \
+	sleep 20
 	$(HEIMDALL) flash --kernel kernel --factoryfs system.img && \
 	echo done
 	echo Updating gecko ... && \
@@ -16,6 +16,8 @@ flash-image:
 	$(ADB) wait-for-device push b2g system/b2g && \
 	echo done
 	echo Updating gaia ... && \
+	$(ADB) rm -rf /cache/* && \
+	$(ADB) rm -rf /data/local/* && \
 	$(ADB) push local data/local && \
 	$(ADB) reboot && \
 	echo done
