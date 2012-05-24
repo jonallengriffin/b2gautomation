@@ -20,8 +20,6 @@ def make_template_manifest(repo_path, input_manifest, output_manifest):
 
 if __name__ == "__main__":
     parser = OptionParser(usage='%prog [options] /path/to/B2G/repo')
-    parser.add_option('--repo', dest='repo_path', action='store',
-                      help='directory of the B2G repo')
     parser.add_option('--source', dest='input_manifest', action='store',
                       help='source manifest')
     parser.add_option('--dest', dest='output_manifest', action='store',
