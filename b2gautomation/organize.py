@@ -41,6 +41,7 @@ def organize(basedir):
                 os.makedirs(directory)
             if not os.path.islink(date):
                 os.symlink(directory, date)
+                symlink_dirs.append(date)
         os.rename(filename, os.path.join(directory, filename))
 
     # Delete any top-level symlinks that are > 30 days old
