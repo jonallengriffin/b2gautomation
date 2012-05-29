@@ -6,6 +6,7 @@ import datetime
 from optparse import OptionParser
 import os
 import re
+import stat
 
 
 def organize(basedir):
@@ -33,12 +34,17 @@ def organize(basedir):
     # Create new directories for dates that don't have them, and 
     # corresponding top-level symlinks; move files into date-specific
     # directories.
+    perms = stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
     for (filename, date) in files_to_move:
         date_parts = date.split('-')
         directory = os.path.join(date_parts[0], date_parts[1], date)
         if date not in symlink_dirs:
             if not os.access(directory, os.F_OK):
                 os.makedirs(directory)
+                # make sure all our directories have correct perms
+                os.chmod(date_parts[0], perms)
+                os.chmod(os.path.join(date_parts[0], date_parts[1]), perms)
+                os.chmod(directory, perms)
             if not os.path.islink(date):
                 os.symlink(directory, date)
                 symlink_dirs.append(date)
