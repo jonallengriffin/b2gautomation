@@ -1,0 +1,6 @@
+mozautolog>=0.2.4
+mozprocess>=0.1b2
+mozrunner>=5.5
+-e hg+http://hg.mozilla.org/automation/logparser/#egg=logparser
+-e git+git://github.com/mozilla/marionette_client.git#egg=marionette
+
