@@ -75,6 +75,8 @@ def main():
                       help='the path to adb, if not on your path')
     parser.add_option('--xre-path', dest='xrePath', action='store',
                       help='the path to xpcshell')
+    parser.add_option('--no-window', dest='noWindow', action='store_true',
+                      help="don't show the emulator window")
 
     options, args = parser.parse_args()
 
@@ -139,6 +141,10 @@ def main():
     if options.xrePath:
         cmd.extend([
            '--xre-path', options.xrePath])
+
+    if options.noWindow:
+        cmd.extend([
+           '--no-window'])
 
     print cmd
 
