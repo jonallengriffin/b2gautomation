@@ -56,9 +56,10 @@
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
   <triggers class="vector"/>
   <concurrentBuild>false</concurrentBuild>
+  <customWorkspace>/data/jenkins/trunk-builds</customWorkspace>
   <builders>
     <hudson.plugins.copyartifact.CopyArtifact>
-      <projectName>build-emulator-x86</projectName>
+      <projectName>build-emulator-x86-trunk</projectName>
       <filter>config.zip</filter>
       <target></target>
       <selector class="hudson.plugins.copyartifact.TriggeredBuildSelector">
@@ -70,6 +71,14 @@
 mkdir config
 unzip -o config.zip -d config
 
+if [ ! -d &quot;mozilla-central&quot; ]; then
+  hg clone http://hg.mozilla.org/mozilla-central
+fi
+cd mozilla-central
+export GECKO_PATH=`pwd`
+hg pull -u
+cd ..
+
 export AUTOCONF=/usr/local/bin/autoconf2.13
 export GAIA_DOMAIN=thisdomaindoesnotexist.org
 ccache --clear
@@ -79,11 +88,10 @@ rm -rf gaia
 ./config.sh nexus-s config/default-nexuss.xml
 ./build.sh
 
-if [ ! -d &quot;b2gautomation&quot; ]; then
-  git clone git://github.com/jonallengriffin/b2gautomation.git
-fi
+rm -rf default.xml
+rm -rf b2gautomation
+git clone git://github.com/jonallengriffin/b2gautomation.git
 cd b2gautomation
-git pull
 virtualenv .
 source bin/activate
 python setup.py develop
@@ -106,8 +114,7 @@ zip -r package.zip b2g-distro/
 
 rm -rf nexus-s_*
 TIMESTAMP=`cat config/timestamp.txt`
-DEST=&quot;nexus-s_$TIMESTAMP.zip&quot;
-rm -rf $DEST
+DEST=&quot;nexus-s_${TIMESTAMP}_trunk.zip&quot;
 mv package.zip $DEST
 
 

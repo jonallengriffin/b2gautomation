@@ -118,7 +118,7 @@ mv package.zip $DEST
                   <remoteDirectorySDF>false</remoteDirectorySDF>
                   <flatten>false</flatten>
                   <cleanRemote>false</cleanRemote>
-                  <execCommand>chmod a+r /mnt/netapp/stage/releases.mozilla.com/b2g
+                  <execCommand>chmod -R a+r /mnt/netapp/stage/releases.mozilla.com/b2g
 python organize.py --directory /mnt/netapp/stage/releases.mozilla.com/b2g
 </execCommand>
                   <execTimeout>120000</execTimeout>

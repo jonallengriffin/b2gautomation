@@ -56,10 +56,11 @@
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
   <triggers class="vector">
     <hudson.triggers.TimerTrigger>
-      <spec>0 1 * * *</spec>
+      <spec>0 6 * * *</spec>
     </hudson.triggers.TimerTrigger>
   </triggers>
   <concurrentBuild>false</concurrentBuild>
+  <customWorkspace>/data/jenkins/trunk-builds</customWorkspace>
   <builders>
     <hudson.tasks.Shell>
       <command>export AUTOCONF=/usr/local/bin/autoconf2.13
@@ -67,16 +68,24 @@ ccache --clear
 rm -rf objdir-gecko
 rm -rf out
 rm -rf gaia
+
+if [ ! -d &quot;mozilla-central&quot; ]; then
+  hg clone http://hg.mozilla.org/mozilla-central
+fi
+cd mozilla-central
+export GECKO_PATH=`pwd`
+hg pull -u
+cd ..
+
 ./config.sh emulator-x86
 ./build.sh
 </command>
     </hudson.tasks.Shell>
     <hudson.tasks.Shell>
-      <command>if [ ! -d &quot;b2gautomation&quot; ]; then
-  git clone git://github.com/jonallengriffin/b2gautomation.git
-fi
+      <command>rm -rf config.zip
+rm -rf b2gautomation
+git clone git://github.com/jonallengriffin/b2gautomation.git
 cd b2gautomation
-git pull
 virtualenv .
 source bin/activate
 python setup.py develop
@@ -108,44 +117,11 @@ cp -R out/host/linux-x86/usr/share/pc-bios b2g-distro/out/host/linux-x86/usr/sha
 
 zip -r package.zip b2g-distro/
 TIMESTAMP=`cat b2gautomation/b2gautomation/timestamp.txt`
-DEST=&quot;emulator-x86_linux_$TIMESTAMP.zip&quot;
+DEST=&quot;emulator-x86_linux_${TIMESTAMP}_trunk.zip&quot;
 rm -rf emulator-x86_linux*
 mv package.zip $DEST
 </command>
     </hudson.tasks.Shell>
-    <jenkins.plugins.publish__over__ssh.BapSshBuilderPlugin>
-      <delegate>
-        <consolePrefix>SSH: </consolePrefix>
-        <delegate>
-          <publishers>
-            <jenkins.plugins.publish__over__ssh.BapSshPublisher>
-              <configName>stage.mozilla.org</configName>
-              <verbose>false</verbose>
-              <transfers>
-                <jenkins.plugins.publish__over__ssh.BapSshTransfer>
-                  <remoteDirectory></remoteDirectory>
-                  <sourceFiles>emulator-x86_linux*</sourceFiles>
-                  <excludes></excludes>
-                  <removePrefix></removePrefix>
-                  <remoteDirectorySDF>false</remoteDirectorySDF>
-                  <flatten>false</flatten>
-                  <cleanRemote>false</cleanRemote>
-                  <execCommand>chmod -R a+r /mnt/netapp/stage/releases.mozilla.com/b2g/*</execCommand>
-                  <execTimeout>120000</execTimeout>
-                  <usePty>false</usePty>
-                </jenkins.plugins.publish__over__ssh.BapSshTransfer>
-              </transfers>
-              <useWorkspaceInPromotion>false</useWorkspaceInPromotion>
-              <usePromotionTimestamp>false</usePromotionTimestamp>
-            </jenkins.plugins.publish__over__ssh.BapSshPublisher>
-          </publishers>
-          <continueOnError>false</continueOnError>
-          <failOnError>false</failOnError>
-          <alwaysPublishFromMaster>false</alwaysPublishFromMaster>
-          <hostConfigurationAccess class="jenkins.plugins.publish_over_ssh.BapSshPublisherPlugin" reference="../.."/>
-        </delegate>
-      </delegate>
-    </jenkins.plugins.publish__over__ssh.BapSshBuilderPlugin>
   </builders>
   <publishers>
     <hudson.tasks.ArtifactArchiver>
@@ -153,7 +129,7 @@ mv package.zip $DEST
       <latestOnly>false</latestOnly>
     </hudson.tasks.ArtifactArchiver>
     <hudson.tasks.BuildTrigger>
-      <childProjects>build-nexus-s, build-sgs2, build-emulator-arm</childProjects>
+      <childProjects>build-sgs2-trunk, build-nexus-s-trunk</childProjects>
       <threshold>
         <name>FAILURE</name>
         <ordinal>2</ordinal>

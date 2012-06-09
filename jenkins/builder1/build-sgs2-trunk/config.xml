@@ -56,61 +56,67 @@
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
   <triggers class="vector"/>
   <concurrentBuild>false</concurrentBuild>
+  <customWorkspace>/data/jenkins/trunk-builds</customWorkspace>
   <builders>
     <hudson.plugins.copyartifact.CopyArtifact>
-      <projectName>build-emulator-x86</projectName>
+      <projectName>build-emulator-x86-trunk</projectName>
       <filter>config.zip</filter>
       <target></target>
-      <selector class="hudson.plugins.copyartifact.TriggeredBuildSelector">
-        <fallbackToLastSuccessful>true</fallbackToLastSuccessful>
-      </selector>
+      <selector class="hudson.plugins.copyartifact.StatusBuildSelector"/>
     </hudson.plugins.copyartifact.CopyArtifact>
     <hudson.tasks.Shell>
       <command>rm -rf config
 mkdir config
 unzip -o config.zip -d config
 
+if [ ! -d &quot;mozilla-central&quot; ]; then
+  hg clone http://hg.mozilla.org/mozilla-central
+fi
+cd mozilla-central
+export GECKO_PATH=`pwd`
+hg pull -u
+cd ..
+
 export AUTOCONF=/usr/local/bin/autoconf2.13
+export ANDROIDFS_DIR=/data/sgs2
 export GAIA_DOMAIN=thisdomaindoesnotexist.org
-ccache --clear
 rm -rf out
 rm -rf objdir-gecko
 rm -rf gaia
-./config.sh nexus-s config/default-nexuss.xml
+ccache --clear
+./config.sh galaxy-s2 config/default-sgs2.xml
 ./build.sh
 
-if [ ! -d &quot;b2gautomation&quot; ]; then
-  git clone git://github.com/jonallengriffin/b2gautomation.git
-fi
+rm -rf default.xml
+rm -rf b2gautomation
+git clone git://github.com/jonallengriffin/b2gautomation.git
 cd b2gautomation
-git pull
 virtualenv .
 source bin/activate
 python setup.py develop
 cd b2gautomation
-python make_template_manifest.py ../.. --source ../../config/default-nexuss.xml --dest ../../default.xml
+python make_template_manifest.py ../.. --source ../../config/default-sgs2.xml --dest ../../default.xml
 cd ../..
 
 rm -rf b2g-distro
 mkdir b2g-distro
-cp default.xml b2g-distro/
+mkdir b2g-distro/local
 cp b2gautomation/b2gautomation/devices/README.txt b2g-distro/
-cp out/target/product/crespo/*.img b2g-distro/
-cp out/target/product/crespo/*.txt b2g-distro/
+cp default.xml b2g-distro/default.xml
+cp out/target/product/galaxys2/kernel b2g-distro/
+cp out/target/product/galaxys2/system.img b2g-distro/
 cp out/host/linux-x86/bin/adb b2g-distro/
-cp out/host/linux-x86/bin/fastboot b2g-distro/
-cp b2gautomation/b2gautomation/devices/nexus-s/* b2g-distro/
+cp -R gaia/profile/* b2g-distro/local
+cp b2gautomation/b2gautomation/devices/galaxy-s2/* b2g-distro/
+cp -R objdir-gecko/dist/b2g b2g-distro/b2g
 
 rm -rf package.zip
 zip -r package.zip b2g-distro/
 
-rm -rf nexus-s_*
+rm -rf sgs2_*
 TIMESTAMP=`cat config/timestamp.txt`
-DEST=&quot;nexus-s_$TIMESTAMP.zip&quot;
-rm -rf $DEST
+DEST=&quot;sgs2_${TIMESTAMP}_trunk.zip&quot;
 mv package.zip $DEST
-
-
 
 </command>
     </hudson.tasks.Shell>
@@ -125,13 +131,13 @@ mv package.zip $DEST
               <transfers>
                 <jenkins.plugins.publish__over__ssh.BapSshTransfer>
                   <remoteDirectory></remoteDirectory>
-                  <sourceFiles>nexus-s*.zip</sourceFiles>
+                  <sourceFiles>sgs2_*.zip</sourceFiles>
                   <excludes></excludes>
                   <removePrefix></removePrefix>
                   <remoteDirectorySDF>false</remoteDirectorySDF>
                   <flatten>false</flatten>
                   <cleanRemote>false</cleanRemote>
-                  <execCommand>chmod -R a+r /mnt/netapp/stage/releases.mozilla.com/b2g/*
+                  <execCommand>chmod a+r /mnt/netapp/stage/releases.mozilla.com/b2g/*
 python organize.py --directory /mnt/netapp/stage/releases.mozilla.com/b2g</execCommand>
                   <execTimeout>120000</execTimeout>
                   <usePty>false</usePty>
