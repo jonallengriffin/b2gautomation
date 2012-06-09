@@ -1,0 +1,124 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <logRotator>
+    <daysToKeep>-1</daysToKeep>
+    <numToKeep>1</numToKeep>
+    <artifactDaysToKeep>-1</artifactDaysToKeep>
+    <artifactNumToKeep>-1</artifactNumToKeep>
+  </logRotator>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>GIT_REMOTE</name>
+          <description>location of the remote git branch</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>GIT_REMOTE_BRANCH</name>
+          <description>Name of the remote branch</description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <scm class="hudson.scm.NullSCM"/>
+  <assignedNode>gaia-test</assignedNode>
+  <canRoam>false</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <authToken>lightsofapollo</authToken>
+  <triggers class="vector"/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.plugins.copyartifact.CopyArtifact>
+      <projectName>gaia-b2g-build-emulator-x86</projectName>
+      <filter>package.zip</filter>
+      <target></target>
+      <selector class="hudson.plugins.copyartifact.StatusBuildSelector">
+        <stable>true</stable>
+      </selector>
+    </hudson.plugins.copyartifact.CopyArtifact>
+    <hudson.tasks.Shell>
+      <command>echo &quot;BUILDING WITH:&quot;
+echo &quot;REMOTE: $GIT_REMOTE/$GIT_REMOTE_BRANCH&quot;
+
+rm -rf b2g-distro
+unzip package.zip
+
+# HACK for dumb scripts so they can find marionette client
+mkdir -p b2g-distro/gecko/testing/marionette
+mv b2g-distro/marionette-client/client b2g-distro/gecko/testing/marionette/
+
+if [ -d _master ];
+then
+  echo &apos;has master updating...&apos;;
+  cd _master &amp;&amp; git pull &amp;&amp; cd ..
+else
+  echo &apos;no master cloning&apos;
+  git clone git://github.com/mozilla-b2g/gaia.git _master
+fi;
+
+rm -Rf working
+cp -R _master/ working/
+
+cd working
+
+# Merge the pull request into master
+git remote add -f -t $GIT_REMOTE_BRANCH requester $GIT_REMOTE
+git branch PR requester/$GIT_REMOTE_BRANCH
+git merge PR
+
+
+export DISPLAY=`x-recorder start-xvfb`
+
+export GAIA_DOMAIN=premu.gaiamobile.org
+export GAIA_PORT=:7771
+export B2G_HOME=$PWD/../b2g-distro
+export TEST_AGENT_SERVER=ws://10.39.70.110:8789
+export REPORTER=TAP
+export TEST_OUTPUT=$PWD/test-output.txt
+
+make update-common
+cd ./tools/ci/unit/
+
+./pr.sh emulator
+
+# Temp fix to kill all tmp marionette userdata images.
+# This *will* likely cause weird problems if another emulator is running...
+rm -f /tmp/marionette*
+
+x-recorder stop-xvfb --display $DISPLAY</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <hudson.plugins.postbuildtask.PostbuildTask>
+      <tasks>
+        <hudson.plugins.postbuildtask.TaskProperties>
+          <logTexts>
+            <hudson.plugins.postbuildtask.LogProperties>
+              <logText>WITH</logText>
+              <operator>AND</operator>
+            </hudson.plugins.postbuildtask.LogProperties>
+          </logTexts>
+          <EscalateStatus>false</EscalateStatus>
+          <RunIfJobSuccessful>false</RunIfJobSuccessful>
+          <script>touch post-action-works.txt</script>
+        </hudson.plugins.postbuildtask.TaskProperties>
+      </tasks>
+    </hudson.plugins.postbuildtask.PostbuildTask>
+  </publishers>
+  <buildWrappers>
+    <hudson.plugins.locksandlatches.LockWrapper>
+      <locks>
+        <hudson.plugins.locksandlatches.LockWrapper_-LockWaitConfig>
+          <name>gaia-emulator-lock</name>
+        </hudson.plugins.locksandlatches.LockWrapper_-LockWaitConfig>
+      </locks>
+    </hudson.plugins.locksandlatches.LockWrapper>
+  </buildWrappers>
+</project>

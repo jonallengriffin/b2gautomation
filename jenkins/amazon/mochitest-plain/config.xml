@@ -1,0 +1,130 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <logRotator>
+    <daysToKeep>-1</daysToKeep>
+    <numToKeep>3</numToKeep>
+    <artifactDaysToKeep>-1</artifactDaysToKeep>
+    <artifactNumToKeep>-1</artifactNumToKeep>
+  </logRotator>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty>
+      <projectUrl>https://github.com/jonallengriffin/b2gautomation/</projectUrl>
+    </com.coravy.hudson.plugins.github.GithubProjectProperty>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>CHUNK</name>
+          <description>The mochitest chunk to run (1 through 8)</description>
+          <defaultValue>0</defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <scm class="hudson.plugins.git.GitSCM">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <name></name>
+        <refspec></refspec>
+        <url>git://github.com/jonallengriffin/b2gautomation.git</url>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>master</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <disableSubmodules>false</disableSubmodules>
+    <recursiveSubmodules>false</recursiveSubmodules>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <authorOrCommitter>false</authorOrCommitter>
+    <clean>false</clean>
+    <wipeOutWorkspace>false</wipeOutWorkspace>
+    <pruneBranches>false</pruneBranches>
+    <remotePoll>false</remotePoll>
+    <ignoreNotifyCommit>false</ignoreNotifyCommit>
+    <buildChooser class="hudson.plugins.git.util.DefaultBuildChooser"/>
+    <gitTool>Default</gitTool>
+    <submoduleCfg class="list"/>
+    <relativeTargetDir></relativeTargetDir>
+    <reference></reference>
+    <excludedRegions></excludedRegions>
+    <excludedUsers></excludedUsers>
+    <gitConfigName></gitConfigName>
+    <gitConfigEmail></gitConfigEmail>
+    <skipTag>false</skipTag>
+    <includedRegions></includedRegions>
+    <scmName></scmName>
+  </scm>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers class="vector"/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.plugins.copyartifact.CopyArtifact>
+      <projectName>b2g-build</projectName>
+      <filter>git.revision, package.zip, testpackage.zip</filter>
+      <target></target>
+      <selector class="hudson.plugins.copyartifact.TriggeredBuildSelector">
+        <fallbackToLastSuccessful>true</fallbackToLastSuccessful>
+      </selector>
+    </hudson.plugins.copyartifact.CopyArtifact>
+    <hudson.tasks.Shell>
+      <command>REV=`cat git.revision`
+TOPDIR=`pwd`
+
+rm -rf objdir-gecko
+unzip testpackage.zip
+
+rm -rf b2g-distro
+unzip package.zip
+
+if [ ! -d &quot;xulrunner&quot; ]; then
+  wget http://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/11.0/runtimes/xulrunner-11.0.en-US.linux-x86_64.tar.bz2
+  tar -xjf xulrunner-11.0.en-US.linux-x86_64.tar.bz2
+  rm xulrunner-11.0.en-US.linux-x86_64.tar.bz2
+fi
+
+if [ ! -d &quot;venv&quot; ]; then
+  virtualenv venv
+fi
+source venv/bin/activate
+
+cd b2gautomation
+pip install -r runmochi-requirements.txt
+
+if [ &quot;$CHUNK&quot; -ne &quot;0&quot; ]; then
+
+  python runmochitest.py --autolog --revision $REV --python-path ${TOPDIR}/venv/bin/python --runtests-path ${TOPDIR}/objdir-gecko/_tests/testing/mochitest/runtestsb2g.py --b2g-path ${TOPDIR}/b2g-distro --total-chunks 8 --this-chunk $CHUNK --run-only-tests android.json --xre-path ${TOPDIR}/xulrunner --no-window
+
+else
+
+for i in {1..8}
+do
+  python runmochitest.py --autolog --revision $REV --python-path ${TOPDIR}/venv/bin/python --runtests-path ${TOPDIR}/objdir-gecko/_tests/testing/mochitest/runtestsb2g.py --b2g-path ${TOPDIR}/b2g-distro --total-chunks 8 --this-chunk $i --run-only-tests android.json --xre-path ${TOPDIR}/xulrunner --no-window
+done
+
+fi
+</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers/>
+  <buildWrappers>
+    <hudson.plugins.build__timeout.BuildTimeoutWrapper>
+      <timeoutMinutes>90</timeoutMinutes>
+      <failBuild>true</failBuild>
+    </hudson.plugins.build__timeout.BuildTimeoutWrapper>
+    <hudson.plugins.locksandlatches.LockWrapper>
+      <locks>
+        <hudson.plugins.locksandlatches.LockWrapper_-LockWaitConfig>
+          <name>emulator-lock</name>
+        </hudson.plugins.locksandlatches.LockWrapper_-LockWaitConfig>
+      </locks>
+    </hudson.plugins.locksandlatches.LockWrapper>
+  </buildWrappers>
+</project>

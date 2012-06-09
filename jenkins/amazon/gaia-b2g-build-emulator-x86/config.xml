@@ -1,0 +1,112 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <logRotator>
+    <daysToKeep>-1</daysToKeep>
+    <numToKeep>1</numToKeep>
+    <artifactDaysToKeep>-1</artifactDaysToKeep>
+    <artifactNumToKeep>-1</artifactNumToKeep>
+  </logRotator>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.plugins.git.GitSCM">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <name></name>
+        <refspec></refspec>
+        <url>git://github.com/mozilla-b2g/mozilla-central.git</url>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>master</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <disableSubmodules>false</disableSubmodules>
+    <recursiveSubmodules>false</recursiveSubmodules>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <authorOrCommitter>false</authorOrCommitter>
+    <clean>false</clean>
+    <wipeOutWorkspace>false</wipeOutWorkspace>
+    <pruneBranches>false</pruneBranches>
+    <remotePoll>false</remotePoll>
+    <ignoreNotifyCommit>false</ignoreNotifyCommit>
+    <buildChooser class="hudson.plugins.git.util.DefaultBuildChooser"/>
+    <gitTool>Default</gitTool>
+    <submoduleCfg class="list"/>
+    <relativeTargetDir></relativeTargetDir>
+    <reference></reference>
+    <excludedRegions></excludedRegions>
+    <excludedUsers></excludedUsers>
+    <gitConfigName></gitConfigName>
+    <gitConfigEmail></gitConfigEmail>
+    <skipTag>false</skipTag>
+    <includedRegions></includedRegions>
+    <scmName></scmName>
+  </scm>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers class="vector"/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>if [ ! -d &quot;B2G&quot; ]; then
+  git clone git://github.com/mozilla-b2g/B2G.git
+fi
+
+cd B2G
+
+#rm -rf out
+rm -f gaia/profile.tar.gz
+#rm -rf objdir-gecko
+./config.sh emulator-x86
+./build.sh
+
+rm -rf b2g-distro
+mkdir -p b2g-distro/out/target/product/generic
+mkdir -p b2g-distro/prebuilts/qemu-kernel/arm
+mkdir -p b2g-distro/out/host/linux-x86/bin
+mkdir -p b2g-distro/out/host/linux-x86/usr/share/pc-bios
+mkdir -p b2g-distro/development/tools/emulator/skins
+mkdir -p b2g-distro/marionette-client
+cp .config b2g-distro
+cp load-config.sh b2g-distro
+cp run-emulator.sh b2g-distro
+cp out/host/linux-x86/bin/emulator b2g-distro/out/host/linux-x86/bin
+cp out/host/linux-x86/bin/emulator-arm b2g-distro/out/host/linux-x86/bin
+cp out/host/linux-x86/bin/adb b2g-distro/out/host/linux-x86/bin
+cp prebuilts/qemu-kernel/arm/kernel-qemu-armv7 b2g-distro/prebuilts/qemu-kernel/arm
+cp -R out/target/product/generic_x86 b2g-distro/out/target/product
+cp -R development/tools/emulator/skins b2g-distro/development/tools/emulator
+cp -R gecko/testing/marionette/client b2g-distro/marionette-client
+#cp -R out/host/linux-x86/usr/share/pc-bios b2g-distro/out/host/linux-x86/usr/share
+
+zip -r ../package.zip b2g-distro/
+echo &quot;BUILD SUCCEEDED&quot;
+
+</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <hudson.tasks.ArtifactArchiver>
+      <artifacts>package.zip</artifacts>
+      <latestOnly>false</latestOnly>
+    </hudson.tasks.ArtifactArchiver>
+  </publishers>
+  <buildWrappers>
+    <hudson.plugins.locksandlatches.LockWrapper>
+      <locks>
+        <hudson.plugins.locksandlatches.LockWrapper_-LockWaitConfig>
+          <name>emulator-lock</name>
+        </hudson.plugins.locksandlatches.LockWrapper_-LockWaitConfig>
+      </locks>
+    </hudson.plugins.locksandlatches.LockWrapper>
+    <org.jenkinsci.plugins.buildnamesetter.BuildNameSetter>
+      <template>${GIT_REVISION}</template>
+    </org.jenkinsci.plugins.buildnamesetter.BuildNameSetter>
+  </buildWrappers>
+</project>
