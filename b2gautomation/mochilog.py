@@ -52,8 +52,6 @@ def main():
                       help='path to log file')
     parser.add_option('--revision', dest='commit', action='store',
                       help='repo revision')
-    parser.add_option('--python-path', dest='pythonPath', action='store',
-                      help='path to python, for use with a virtualenv')
     parser.add_option('--autolog', dest='autolog', action='store_true',
                       help='post results to autolog')
     parser.add_option('--testgroup', dest='testgroup', action='store',
@@ -62,10 +60,6 @@ def main():
     options, args = parser.parse_args()
 
     options.logfile = os.path.abspath(options.logfile)
-
-    if not options.pythonPath:
-        options.pythonPath = sys.executable
-    options.pythonPath = os.path.abspath(options.pythonPath)
 
     if options.autolog and not options.commit:
         raise Exception('must specify --revision if --autolog is used')
