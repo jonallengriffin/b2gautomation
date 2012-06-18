@@ -64,6 +64,15 @@ def make_device_manifests(template_manifest):
                     os.path.join(git_dir, 'default.xml'),
                     os.path.join(os.path.dirname(template_manifest), 'default-nexuss.xml'))
 
+    # switch to the otoro branch
+    cmd = ['git', 'checkout', 'otoro']
+    execute_cmd(cmd, git_dir)
+
+    # generate the nexus-s manifest
+    update_manifest(dom,
+                    os.path.join(git_dir, 'default.xml'),
+                    os.path.join(os.path.dirname(template_manifest), 'default-otoro.xml'))
+
     # remove the git directory
     shutil.rmtree(git_dir)
 
