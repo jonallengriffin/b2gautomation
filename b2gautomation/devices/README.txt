@@ -10,7 +10,7 @@ The flash script requires adb, plus either fastboot or heimdall, depending
 on your device.
 
 Galaxy-S2: uses adb and heimdall
-Nexus-S: uses adb and fastboot
+Nexus-S or Otoro: uses adb and fastboot
 
 The flash script works best on linux, but you may be able to use it on
 other operating systems by installing adb and heimdall or fastboot using
