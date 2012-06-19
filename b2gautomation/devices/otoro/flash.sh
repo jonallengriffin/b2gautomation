@@ -51,10 +51,17 @@ flash_fastboot()
 	echo "Flashing system images..."
 	$FASTBOOT erase cache &&
 	$FASTBOOT erase userdata &&
+	$FASTBOOT flash boot boot.img &&
 	$FASTBOOT flash userdata userdata.img &&
 	$FASTBOOT flash system system.img &&
 	echo "Rebooting..." &&
 	$FASTBOOT reboot || exit -1
+
+	echo "Setting system permissions..."
+	$ADB wait-for-device remount &&
+	$ADB shell chmod 755 /system/b2g/b2g &&
+	$ADB shell chmod 755 /system/b2g/plugin-container &&
+	$ADB shell chmod 755 /system/b2g/updater || exit -1
 }
 
 flash_fastboot
