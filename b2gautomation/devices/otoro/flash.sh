@@ -5,11 +5,6 @@ OS=`uname -s | tr "[[:upper:]]" "[[:lower:]]"`
 ADB=${ADB:-adb}
 FASTBOOT=${FASTBOOT:-fastboot}
 
-if [[ $(/usr/bin/id -u) -ne 0 ]]; then
-    echo "This script must be run with sudo."
-    exit 1
-fi
-
 if [ ! -f "`which \"$ADB\"`" ]; then
 	if [ "$OS" != "linux" ]; then
 		echo "adb not found on your PATH, and this package does not contain"
@@ -28,6 +23,14 @@ if [ ! -f "`which \"$FASTBOOT\"`" ]; then
 	FASTBOOT=./fastboot
 fi
 
+fail()
+{
+  echo "Failed to execute ADB or FASTBOOT command."
+  echo "If you got a permissions error, you may need to run this script"
+  echo "with sudo."
+  exit -1
+}
+
 update_time()
 {
 	echo "Attempting to set the time on the device..."
@@ -40,12 +43,12 @@ update_time()
 flash_fastboot()
 {
 	echo "Rebooting into device bootloader..."
-	$ADB reboot bootloader || exit -1
+	$ADB reboot bootloader || fail
 	$FASTBOOT devices
 
 	if [ $? -ne 0 ]; then
 		echo Couldn\'t setup fastboot
-		exit -1
+		fail
 	fi
 
 	echo "Flashing system images..."
