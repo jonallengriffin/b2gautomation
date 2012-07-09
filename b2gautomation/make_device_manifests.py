@@ -29,7 +29,8 @@ def update_manifest(src_dom, src_manifest, dest_manifest):
             src_revision = src_project.getAttribute('revision')
             if (dest_path == src_path and dest_name == src_name
                                       and src_revision
-                                      and dest_project.hasAttribute('revision')):
+                                      and dest_project.hasAttribute('revision')
+                                      and dest_name != "platform/frameworks/base"):
                 dest_project.setAttribute('revision', src_revision)
 
     f = open(dest_manifest, 'w')
