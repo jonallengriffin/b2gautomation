@@ -61,6 +61,7 @@ flash_fastboot()
 	$FASTBOOT reboot || exit -1
 
 	echo "Setting system permissions..."
+	sleep 50
 	$ADB wait-for-device remount &&
 	$ADB shell chmod 755 /system/b2g/b2g &&
 	$ADB shell chmod 755 /system/b2g/plugin-container &&
