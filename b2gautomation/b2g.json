@@ -1,5 +1,7 @@
 {
  "runtests": {
+  "Harness_sanity": "",
+  "MochiKit-1.4.2/tests": "",
   "content/canvas/test": "",
   "content/media/test": "",
   "content/smil/test": "",
@@ -16,27 +18,30 @@
   "dom/tests/mochitest/ajax/scriptaculous": "",
   "dom/tests/mochitest/ajax/jquery": "",
   "dom/tests/mochitest/dom-level2-html": "",
-  "Harness_sanity": "",
-  "editor/composer/test": "",
-  "intl/uconv/tests": "",
   "dom/tests/mochitest/orientation": "",
   "dom/tests/mochitest/storageevent": "",
+  "editor/composer/test": "",
+  "intl/uconv/tests": "",
+  "js": "",
+  "layout/inspector/tests": "",
   "layout/xul/test": "",
   "modules/libjar/test/mochitest": "",
-  "layout/inspector/tests": "",
-  "toolkit/xre/test": "",
-  "toolkit/components/microformats/tests": "",
-  "MochiKit-1.4.2/tests": "",
   "parser/htmlparser/tests/mochitest": "",
-  "js": ""
+  "toolkit/components/microformats/tests": "",
+  "toolkit/xre/test": ""
  },
  "excludetests": {
   "content/media/test/test_access_control.html": "TIMED_OUT",
   "content/media/test/test_a4_tone.html": "TIMED_OUT",
+  "content/media/test/test_audio_event_adopt.html": "TIMED_OUT",
   "dom/indexedDB/test/test_create_index.html": "bug 780751",
   "dom/indexedDB/test/test_cursor_mutation.html": "bug 780751",
   "dom/indexedDB/test/test_create_objectStore.html": "bug 780751",
-  "dom/indexedDB/test/test_create_index_with_integer_keys.html": "bug 780751"
+  "dom/indexedDB/test/test_create_index_with_integer_keys.html": "bug 780751",
+  "layout/xul/test/test_bug394800.xhtml": "bug 781967",
+  "modules/libjar/test/mochitest/test_bug403331.html": "bug 781963",
+  "parser/htmlparser/tests/mochitest/test_html5_tree_construction.html": "bug 781960",
+  "parser/htmlparser/tests/mochitest/test_html5_tree_construction_part2.html": "bug 781960"
  }
 }
 
