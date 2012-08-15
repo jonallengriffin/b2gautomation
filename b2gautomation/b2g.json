@@ -24,11 +24,18 @@
   "intl/uconv/tests": "",
   "js": "",
   "layout/inspector/tests": "",
+  "layout/tables": "",
   "layout/xul/test": "",
   "modules/libjar/test/mochitest": "",
   "parser/htmlparser/tests/mochitest": "",
-  "toolkit/components/microformats/tests": "",
-  "toolkit/xre/test": ""
+  "toolkit/components": "",
+  "toolkit/content": "",
+  "toolkit/identity": "",
+  "toolkit/mozapps": "",
+  "toolkit/xre/test": "",
+  "uriloader": "",
+  "webapprt": "",
+  "widget": ""
  },
  "excludetests": {
   "MochiKit-1.4.2/tests/test_MochiKit-DOM-Safari.html": "bug 782720",
