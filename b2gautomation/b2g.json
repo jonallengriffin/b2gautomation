@@ -51,10 +51,15 @@
   "content/media/test/test_buffered.html": "TIMED_OUT",
   "content/media/test/test_bug465498.html": "TIMED_OUT",
   "content/media/test/test_bug463162.xhtml": "TIMED_OUT",
+  "content/media/test/test_bug493187.html": "TIMED_OUT",
+  "content/media/test/test_bug495300.html": "TIMED_OUT",
+  "content/media/test/test_bug686137.html": "TIMED_OUT",
+  "content/media/test/test_bug495145.html": "TIMED_OUT",
   "layout/xul/test/test_bug394800.xhtml": "bug 781967",
   "modules/libjar/test/mochitest/test_bug403331.html": "bug 781963",
   "parser/htmlparser/tests/mochitest/test_html5_tree_construction.html": "bug 781960",
-  "parser/htmlparser/tests/mochitest/test_html5_tree_construction_part2.html": "bug 781960"
+  "parser/htmlparser/tests/mochitest/test_html5_tree_construction_part2.html": "bug 781960",
+  "toolkit/content/tests/widgets": "bug 783397"
  }
 }
 
