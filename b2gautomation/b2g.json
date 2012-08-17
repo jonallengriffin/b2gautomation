@@ -59,7 +59,8 @@
   "modules/libjar/test/mochitest/test_bug403331.html": "bug 781963",
   "parser/htmlparser/tests/mochitest/test_html5_tree_construction.html": "bug 781960",
   "parser/htmlparser/tests/mochitest/test_html5_tree_construction_part2.html": "bug 781960",
-  "toolkit/content/tests/widgets": "bug 783397"
+  "toolkit/content/tests/widgets": "bug 783397",
+  "toolkit/components/passwordmgr": "bug 783652"
  }
 }
 
