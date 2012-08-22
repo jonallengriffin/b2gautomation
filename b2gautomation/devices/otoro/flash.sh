@@ -66,6 +66,12 @@ flash_fastboot()
 	$ADB shell chmod 755 /system/b2g/b2g &&
 	$ADB shell chmod 755 /system/b2g/plugin-container &&
 	$ADB shell chmod 755 /system/b2g/updater || exit -1
+
+	echo "Installing settings db..."
+	$ADB shell stop b2g &&
+	$ADB push settings/2588645841ssegtnti /data/local/indexedDB/chrome/2588645841ssegtnti &&
+	$ADB push settings/2588645841ssegtnti.sqlite /data/local/indexedDB/chrome/2588645841ssegtnti.sqlite &&
+	$ADB shell start b2g || exit -1
 }
 
 flash_fastboot
