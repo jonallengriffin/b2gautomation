@@ -52,11 +52,10 @@ flash_fastboot()
 	fi
 
 	echo "Flashing system images.  This will take several minutes..."
-	$FASTBOOT erase cache &&
 	$FASTBOOT flash boot boot.img &&
 	$FASTBOOT flash system system.img &&
 	echo "Rebooting..." &&
-	$FASTBOOT reboot || exit -1
+	$FASTBOOT continue || exit -1
 
 	echo "Setting system permissions..."
 	sleep 50
@@ -64,6 +63,9 @@ flash_fastboot()
 	$ADB shell chmod 755 /system/b2g/b2g &&
 	$ADB shell chmod 755 /system/b2g/plugin-container &&
 	$ADB shell chmod 755 /system/b2g/updater || exit -1
+
+	echo "Installing gaia..."
+	$ADB push profile /data/local
 
 	echo "Installing settings db..."
 	$ADB shell stop b2g &&
