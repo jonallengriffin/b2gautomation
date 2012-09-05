@@ -13,7 +13,8 @@ from xml.dom.minidom import parse
 def execute_cmd(cmd, cwd):
     print 'executing', cmd
     proc = ProcessHandler(cmd, cwd=cwd)
-    assert(proc.waitForFinish(timeout=180) == 0)
+    proc.processOutput(timeout=180)
+    assert(proc.waitForFinish() == 0)
 
 def update_manifest(src_dom, src_manifest, dest_manifest):
     dest_dom = parse(src_manifest)
