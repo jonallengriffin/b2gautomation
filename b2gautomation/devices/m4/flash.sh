@@ -43,7 +43,7 @@ update_time()
 flash_fastboot()
 {
 	echo "Rebooting into device bootloader..."
-	$ADB reboot bootloader || fail
+	$ADB reboot bootloader
 	$FASTBOOT devices
 
 	if [ $? -ne 0 ]; then
@@ -57,21 +57,16 @@ flash_fastboot()
 	echo "Rebooting..." &&
 	$FASTBOOT continue || exit -1
 
-	echo "Setting system permissions..."
-	sleep 50
-	$ADB wait-for-device remount &&
-	$ADB shell chmod 755 /system/b2g/b2g &&
-	$ADB shell chmod 755 /system/b2g/plugin-container &&
-	$ADB shell chmod 755 /system/b2g/updater || exit -1
-
 	echo "Installing gaia..."
-	$ADB push profile /data/local
-
-	echo "Installing settings db..."
-	$ADB shell stop b2g &&
-	$ADB push settings/2588645841ssegtnti /data/local/indexedDB/chrome/2588645841ssegtnti &&
-	$ADB push settings/2588645841ssegtnti.sqlite /data/local/indexedDB/chrome/2588645841ssegtnti.sqlite &&
-	$ADB shell start b2g || exit -1
+	$ADB wait-for-device &&
+	$ADB shell stop zygote &&
+	$ADB shell rm -r /data/local/indexedDB
+	$ADB shell rm -r /data/local/webapps
+	$ADB shell rm -r /data/local/startupCache
+	$ADB shell rm -r /data/local/permissions.sqlite
+	$ADB push profile /data/local &&
+        $ADB shell rm -r /data/b2g/*
+	$ADB shell start zygote || exit -1
 }
 
 flash_fastboot
