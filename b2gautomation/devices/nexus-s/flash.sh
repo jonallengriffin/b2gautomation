@@ -35,7 +35,7 @@ update_time()
 flash_fastboot()
 {
 	echo "Rebooting into device bootloader..."
-	$ADB reboot bootloader || exit -1
+	$ADB reboot bootloader || true
 	$FASTBOOT devices &&
 	( $FASTBOOT oem unlock || true )
 
