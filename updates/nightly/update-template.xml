@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<updates>
+  <update type="minor" appVersion="$VERSION$" version="$VERSION$" extensionVersion="$VERSION$" buildID="$BUILD_ID$" licenseURL="http://www.mozilla.com/test/sample-eula.html" detailsURL="http://www.mozilla.com/test/sample-details.html">
+    <patch type="complete" URL="http://update.boot2gecko.org/nightly/$FILE$" hashFunction="SHA512" hashValue="$HASH$" size="$SIZE$"/>
+  </update>
+</updates>
+
