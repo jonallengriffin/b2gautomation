@@ -31,7 +31,7 @@
       <hudson.plugins.git.UserRemoteConfig>
         <name></name>
         <refspec></refspec>
-        <url>git://github.com/mozilla-b2g/gaia.git</url>
+        <url>https://github.com/mozilla-b2g/gaia.git</url>
       </hudson.plugins.git.UserRemoteConfig>
     </userRemoteConfigs>
     <branches>
@@ -61,7 +61,7 @@
     <includedRegions></includedRegions>
     <scmName></scmName>
   </scm>
-  <assignedNode>gaia-test</assignedNode>
+  <assignedNode>gaia-ubuntu</assignedNode>
   <canRoam>false</canRoam>
   <disabled>true</disabled>
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
@@ -73,42 +73,52 @@
   </triggers>
   <concurrentBuild>false</concurrentBuild>
   <builders>
+    <hudson.tasks.Shell>
+      <command>rm -Rf b2g-distro</command>
+    </hudson.tasks.Shell>
     <hudson.plugins.copyartifact.CopyArtifact>
-      <projectName>gaia-b2g-build-emulator-x86</projectName>
-      <filter>package.zip</filter>
-      <target></target>
+      <projectName>b2g-build-desktop</projectName>
+      <filter>b2g-distro/b2g-desktop.tar.bz2</filter>
+      <target>$WORKSPACE</target>
       <selector class="hudson.plugins.copyartifact.StatusBuildSelector">
         <stable>true</stable>
       </selector>
     </hudson.plugins.copyartifact.CopyArtifact>
     <hudson.tasks.Shell>
-      <command>ROOT=$PWD;
+      <command>rm -Rf generatedJUnitFiles
+rm -f test-output.xml
 
-rm -rf b2g-distro
-unzip package.zip
-
-# HACK for dumb scripts so they can find marionette client
-mkdir -p b2g-distro/gecko/testing/marionette
-mv b2g-distro/marionette-client/client b2g-distro/gecko/testing/marionette/
+# again hack to make script happy
+ROOT=$PWD
+cd b2g-distro/
+mkdir -p dist/
+cp b2g-desktop.tar.bz2 dist/
+cd dist &amp;&amp; tar xvjf b2g-desktop.tar.bz2 &amp;&amp; cd ..
+mv dist/b2g dist/bin
+cd $ROOT;
 
 export DISPLAY=`x-recorder start-xvfb`
-
-export GAIA_DOMAIN=premu.gaiamobile.org
-export GAIA_PORT=:7771
-export B2G_HOME=$PWD/b2g-distro
-export TEST_AGENT_SERVER=ws://10.39.70.110:8789
+export GAIA_DOMAIN=prdb2g.gaiamobile.org
+export GAIA_PORT=:8080
+export B2G_HOME=$PWD/b2g-distro/
+export TEST_AGENT_SERVER=ws://50.116.11.35:8789
 export TEST_OUTPUT=$ROOT/test-output.xml
 
 make update-common
 cd ./tools/ci/unit/
 
-./pr.sh emulator
+echo &quot;USING: $DISPLAY&quot;;
+
+./b2g-desktop.sh
 
 # Temp fix to kill all tmp marionette userdata images.
 # This *will* likely cause weird problems if another emulator is running...
 rm -f /tmp/marionette*
 
-x-recorder stop-xvfb --display $DISPLAY</command>
+x-recorder stop-xvfb --display $DISPLAY
+
+
+</command>
     </hudson.tasks.Shell>
   </builders>
   <publishers>
@@ -118,7 +128,7 @@ x-recorder stop-xvfb --display $DISPLAY</command>
           <pattern>test-output.xml</pattern>
           <faildedIfNotNew>true</faildedIfNotNew>
           <deleteOutputFiles>true</deleteOutputFiles>
-          <stopProcessingIfError>true</stopProcessingIfError>
+          <stopProcessingIfError>false</stopProcessingIfError>
         </JUnitType>
       </types>
       <thresholds>
@@ -138,21 +148,14 @@ x-recorder stop-xvfb --display $DISPLAY</command>
     </xunit>
     <hudson.tasks.Mailer>
       <recipients>jlal@mozilla.com</recipients>
-      <dontNotifyEveryUnstableBuild>false</dontNotifyEveryUnstableBuild>
+      <dontNotifyEveryUnstableBuild>true</dontNotifyEveryUnstableBuild>
       <sendToIndividuals>false</sendToIndividuals>
     </hudson.tasks.Mailer>
   </publishers>
   <buildWrappers>
     <hudson.plugins.build__timeout.BuildTimeoutWrapper>
-      <timeoutMinutes>60</timeoutMinutes>
+      <timeoutMinutes>20</timeoutMinutes>
       <failBuild>true</failBuild>
     </hudson.plugins.build__timeout.BuildTimeoutWrapper>
-    <hudson.plugins.locksandlatches.LockWrapper>
-      <locks>
-        <hudson.plugins.locksandlatches.LockWrapper_-LockWaitConfig>
-          <name>gaia-emulator-lock</name>
-        </hudson.plugins.locksandlatches.LockWrapper_-LockWaitConfig>
-      </locks>
-    </hudson.plugins.locksandlatches.LockWrapper>
   </buildWrappers>
 </project>

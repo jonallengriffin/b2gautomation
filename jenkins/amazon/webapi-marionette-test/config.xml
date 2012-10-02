@@ -4,14 +4,14 @@
   <description></description>
   <logRotator>
     <daysToKeep>-1</daysToKeep>
-    <numToKeep>5</numToKeep>
+    <numToKeep>15</numToKeep>
     <artifactDaysToKeep>-1</artifactDaysToKeep>
     <artifactNumToKeep>-1</artifactNumToKeep>
   </logRotator>
   <keepDependencies>false</keepDependencies>
   <properties>
     <com.coravy.hudson.plugins.github.GithubProjectProperty>
-      <projectUrl>https://github.com/doublec/mozilla-central/</projectUrl>
+      <projectUrl>https://github.com/mozilla/releases-mozilla-central/</projectUrl>
     </com.coravy.hudson.plugins.github.GithubProjectProperty>
   </properties>
   <scm class="hudson.plugins.git.GitSCM">
@@ -20,7 +20,7 @@
       <hudson.plugins.git.UserRemoteConfig>
         <name></name>
         <refspec></refspec>
-        <url>git://github.com/doublec/mozilla-central.git</url>
+        <url>git://github.com/mozilla/releases-mozilla-central.git</url>
       </hudson.plugins.git.UserRemoteConfig>
     </userRemoteConfigs>
     <branches>
@@ -36,6 +36,7 @@
     <wipeOutWorkspace>false</wipeOutWorkspace>
     <pruneBranches>false</pruneBranches>
     <remotePoll>false</remotePoll>
+    <ignoreNotifyCommit>false</ignoreNotifyCommit>
     <buildChooser class="hudson.plugins.git.util.DefaultBuildChooser"/>
     <gitTool>Default</gitTool>
     <submoduleCfg class="list"/>
@@ -46,9 +47,11 @@
     <gitConfigName></gitConfigName>
     <gitConfigEmail></gitConfigEmail>
     <skipTag>false</skipTag>
+    <includedRegions></includedRegions>
     <scmName></scmName>
   </scm>
-  <canRoam>true</canRoam>
+  <assignedNode>ubuntu-test-1||ubuntu-test-2||ubuntu-test-3||ubuntu-test-4</assignedNode>
+  <canRoam>false</canRoam>
   <disabled>false</disabled>
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
@@ -64,30 +67,38 @@
       </selector>
     </hudson.plugins.copyartifact.CopyArtifact>
     <hudson.tasks.Shell>
-      <command>REV=`cat git.revision`
-git checkout $REV
+      <command>#!/bin/sh -x
+
+# kill any leftover emulators lying around
+pkill -9 emulator
+
+REV=`cat git.revision`
+git checkout $REV || exit 1
 DIR=`pwd`
 
 rm -rf b2g-distro
-unzip package.zip
+unzip package.zip || exit 1
 
 cd testing/marionette/client/marionette
 
-sh venv_automation.sh /opt/python2.7/bin/python --emulator arm --homedir=$DIR/b2g-distro --no-window --type=b2g --revision $REV --autolog --testgroup marionette tests/unit-tests.ini
+# DISPLAY :1 should be running from the xorg upstart script
+export DISPLAY=:1
+
+sh venv_automation.sh /usr/bin/python --emulator arm --homedir=$DIR/b2g-distro --type=b2g --revision $REV --autolog --testgroup marionette tests/unit-tests.ini
+
+OUT=$?
+
+pkill -9 emulator
+
+if [ &quot;$OUT&quot; -eq &quot;10&quot; ]; then
+   # this means that tests failed, but we&apos;ll exit with success
+   exit 0
+else
+   exit $OUT
+fi
 </command>
     </hudson.tasks.Shell>
   </builders>
   <publishers/>
-  <buildWrappers>
-    <hudson.plugins.locksandlatches.LockWrapper>
-      <locks>
-        <hudson.plugins.locksandlatches.LockWrapper_-LockWaitConfig>
-          <name>emulator-lock</name>
-        </hudson.plugins.locksandlatches.LockWrapper_-LockWaitConfig>
-      </locks>
-    </hudson.plugins.locksandlatches.LockWrapper>
-    <org.jenkinsci.plugins.buildnamesetter.BuildNameSetter>
-      <template>${GIT_REVISION}</template>
-    </org.jenkinsci.plugins.buildnamesetter.BuildNameSetter>
-  </buildWrappers>
+  <buildWrappers/>
 </project>

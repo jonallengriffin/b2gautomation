@@ -50,7 +50,11 @@
   <disabled>false</disabled>
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
-  <triggers class="vector"/>
+  <triggers class="vector">
+    <hudson.triggers.SCMTrigger>
+      <spec>0,15,30,45 * * * *</spec>
+    </hudson.triggers.SCMTrigger>
+  </triggers>
   <concurrentBuild>false</concurrentBuild>
   <builders>
     <hudson.tasks.Shell>
@@ -60,30 +64,34 @@ fi
 
 cd B2G
 
-#rm -rf out
-rm -f gaia/profile.tar.gz
-#rm -rf objdir-gecko
+rm -Rf out
+rm -Rf gaia
+rm -Rf objdir-gecko
+
+./repo sync
 ./config.sh emulator-x86
 ./build.sh
 
 rm -rf b2g-distro
-mkdir -p b2g-distro/out/target/product/generic
+mkdir -p b2g-distro/out/target/product/generic_x86
 mkdir -p b2g-distro/prebuilts/qemu-kernel/arm
 mkdir -p b2g-distro/out/host/linux-x86/bin
 mkdir -p b2g-distro/out/host/linux-x86/usr/share/pc-bios
 mkdir -p b2g-distro/development/tools/emulator/skins
+mkdir -p b2g-distro/prebuilts/qemu-kernel/x86/
 mkdir -p b2g-distro/marionette-client
+
 cp .config b2g-distro
 cp load-config.sh b2g-distro
 cp run-emulator.sh b2g-distro
-cp out/host/linux-x86/bin/emulator b2g-distro/out/host/linux-x86/bin
-cp out/host/linux-x86/bin/emulator-arm b2g-distro/out/host/linux-x86/bin
+cp out/host/linux-x86/bin/emulator-x86 b2g-distro/out/host/linux-x86/bin
 cp out/host/linux-x86/bin/adb b2g-distro/out/host/linux-x86/bin
-cp prebuilts/qemu-kernel/arm/kernel-qemu-armv7 b2g-distro/prebuilts/qemu-kernel/arm
+#cp prebuilts/qemu-kernel/arm/kernel-qemu-armv7 b2g-distro/prebuilts/qemu-kernel/arm
 cp -R out/target/product/generic_x86 b2g-distro/out/target/product
+cp -R prebuilts/qemu-kernel/x86/kernel-qemu b2g-distro/prebuilts/qemu-kernel/x86/
 cp -R development/tools/emulator/skins b2g-distro/development/tools/emulator
 cp -R gecko/testing/marionette/client b2g-distro/marionette-client
-#cp -R out/host/linux-x86/usr/share/pc-bios b2g-distro/out/host/linux-x86/usr/share
+cp -R out/host/linux-x86/usr/share/pc-bios b2g-distro/out/host/linux-x86/usr/share
 
 zip -r ../package.zip b2g-distro/
 echo &quot;BUILD SUCCEEDED&quot;

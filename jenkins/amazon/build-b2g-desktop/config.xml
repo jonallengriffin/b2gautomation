@@ -2,28 +2,11 @@
 <project>
   <actions/>
   <description></description>
-  <logRotator>
-    <daysToKeep>-1</daysToKeep>
-    <numToKeep>5</numToKeep>
-    <artifactDaysToKeep>-1</artifactDaysToKeep>
-    <artifactNumToKeep>-1</artifactNumToKeep>
-  </logRotator>
   <keepDependencies>false</keepDependencies>
   <properties>
-    <hudson.security.AuthorizationMatrixProperty>
-      <permission>hudson.model.Item.Cancel:jgriffin</permission>
-      <permission>hudson.model.Item.Configure:jgriffin</permission>
-      <permission>hudson.model.Item.Read:anonymous</permission>
-      <permission>hudson.model.Item.Read:jgriffin</permission>
-      <permission>hudson.model.Item.Read:github</permission>
-      <permission>hudson.scm.SCM.Tag:jgriffin</permission>
-      <permission>hudson.model.Item.Delete:jgriffin</permission>
-      <permission>hudson.model.Run.Delete:jgriffin</permission>
-      <permission>hudson.model.Item.Build:jgriffin</permission>
-      <permission>hudson.model.Item.Build:github</permission>
-      <permission>hudson.model.Run.Update:jgriffin</permission>
-      <permission>hudson.model.Item.Workspace:jgriffin</permission>
-    </hudson.security.AuthorizationMatrixProperty>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty>
+      <projectUrl>https://github.com/mozilla/mozilla-central/</projectUrl>
+    </com.coravy.hudson.plugins.github.GithubProjectProperty>
   </properties>
   <scm class="hudson.plugins.git.GitSCM">
     <configVersion>2</configVersion>
@@ -31,7 +14,7 @@
       <hudson.plugins.git.UserRemoteConfig>
         <name></name>
         <refspec></refspec>
-        <url>git://github.com/mozilla-b2g/gaia.git</url>
+        <url>git://github.com/mozilla/mozilla-central.git</url>
       </hudson.plugins.git.UserRemoteConfig>
     </userRemoteConfigs>
     <branches>
@@ -61,25 +44,47 @@
     <includedRegions></includedRegions>
     <scmName></scmName>
   </scm>
-  <assignedNode>gaia-host</assignedNode>
+  <assignedNode>ubuntu-test-1</assignedNode>
   <canRoam>false</canRoam>
   <disabled>false</disabled>
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
-  <triggers class="vector">
-    <com.cloudbees.jenkins.GitHubPushTrigger>
-      <spec></spec>
-    </com.cloudbees.jenkins.GitHubPushTrigger>
-  </triggers>
+  <triggers class="vector"/>
   <concurrentBuild>false</concurrentBuild>
   <builders>
     <hudson.tasks.Shell>
-      <command>make stamp-commit-hash update-offline-manifests test-agent-config
-sudo cp -R * /data/aiag
-cd /data/aiag
-sudo chown -R apache:apache *</command>
+      <command>echo &quot;
+mk_add_options MOZ_OBJDIR=objdir
+mk_add_options MOZ_MAKE_FLAGS=\&quot;-j9 -s\&quot;
+
+ac_add_options --enable-application=b2g
+ac_add_options --disable-libjpeg-turbo
+ 
+# This option is required if you want to be able to run Gaia&apos;s tests
+ac_add_options --enable-tests
+
+# turn on mozTelephony/mozSms interfaces
+# Only turn this line on if you actually have a dev phone
+# you want to forward to. If you get crashes at startup,
+# make sure this line is commented.
+#ac_add_options --enable-b2g-ril
+&quot; &gt; mozconfig
+
+make -f client.mk build
+
+cd objdir
+make package
+cd ..
+
+rm -rf package.zip
+zip -r package.zip objdir/dist/b2g</command>
     </hudson.tasks.Shell>
   </builders>
-  <publishers/>
+  <publishers>
+    <hudson.tasks.ArtifactArchiver>
+      <artifacts>package.zip</artifacts>
+      <latestOnly>false</latestOnly>
+    </hudson.tasks.ArtifactArchiver>
+  </publishers>
   <buildWrappers/>
 </project>

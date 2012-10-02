@@ -2,28 +2,11 @@
 <project>
   <actions/>
   <description></description>
-  <logRotator>
-    <daysToKeep>-1</daysToKeep>
-    <numToKeep>5</numToKeep>
-    <artifactDaysToKeep>-1</artifactDaysToKeep>
-    <artifactNumToKeep>-1</artifactNumToKeep>
-  </logRotator>
   <keepDependencies>false</keepDependencies>
   <properties>
-    <hudson.security.AuthorizationMatrixProperty>
-      <permission>hudson.model.Item.Cancel:jgriffin</permission>
-      <permission>hudson.model.Item.Configure:jgriffin</permission>
-      <permission>hudson.model.Item.Read:anonymous</permission>
-      <permission>hudson.model.Item.Read:jgriffin</permission>
-      <permission>hudson.model.Item.Read:github</permission>
-      <permission>hudson.scm.SCM.Tag:jgriffin</permission>
-      <permission>hudson.model.Item.Delete:jgriffin</permission>
-      <permission>hudson.model.Run.Delete:jgriffin</permission>
-      <permission>hudson.model.Item.Build:jgriffin</permission>
-      <permission>hudson.model.Item.Build:github</permission>
-      <permission>hudson.model.Run.Update:jgriffin</permission>
-      <permission>hudson.model.Item.Workspace:jgriffin</permission>
-    </hudson.security.AuthorizationMatrixProperty>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty>
+      <projectUrl>https://github.com/mozilla-b2g/gaia/</projectUrl>
+    </com.coravy.hudson.plugins.github.GithubProjectProperty>
   </properties>
   <scm class="hudson.plugins.git.GitSCM">
     <configVersion>2</configVersion>
@@ -61,25 +44,65 @@
     <includedRegions></includedRegions>
     <scmName></scmName>
   </scm>
-  <assignedNode>gaia-host</assignedNode>
+  <assignedNode>ubuntu-test-1</assignedNode>
   <canRoam>false</canRoam>
   <disabled>false</disabled>
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
-  <triggers class="vector">
-    <com.cloudbees.jenkins.GitHubPushTrigger>
-      <spec></spec>
-    </com.cloudbees.jenkins.GitHubPushTrigger>
-  </triggers>
+  <triggers class="vector"/>
   <concurrentBuild>false</concurrentBuild>
   <builders>
+    <hudson.plugins.copyartifact.CopyArtifact>
+      <projectName>build-b2g-desktop</projectName>
+      <filter>package.zip</filter>
+      <target></target>
+      <selector class="hudson.plugins.copyartifact.TriggeredBuildSelector">
+        <fallbackToLastSuccessful>true</fallbackToLastSuccessful>
+      </selector>
+    </hudson.plugins.copyartifact.CopyArtifact>
     <hudson.tasks.Shell>
-      <command>make stamp-commit-hash update-offline-manifests test-agent-config
-sudo cp -R * /data/aiag
-cd /data/aiag
-sudo chown -R apache:apache *</command>
+      <command>#!/bin/sh -x
+
+pkill -9 emulator
+
+rm -rf objdir
+unzip package.zip
+
+# HACK for dumb scripts so they can find marionette client
+mkdir -p b2g-distro/gecko/testing/marionette
+mv b2g-distro/marionette-client/client b2g-distro/gecko/testing/marionette/
+
+export DISPLAY=:1
+
+PWD=`pwd`
+
+export GAIA_DOMAIN=premu.gaiamobile.org
+export GAIA_PORT=:8080
+export B2G_HOME=$PWD/b2g-distro
+# IP of ubuntu-test-1
+export TEST_AGENT_SERVER=ws://10.244.131.111:8789
+export REPORTER=TAP
+export TEST_OUTPUT=$PWD/test-output.txt
+export EMULATOR_TYPE=arm
+# from Gaia&apos;s Makefile
+export PATH=$PWD/objdir/dist/b2g:$PATH
+
+DEBUG=1 make update-common
+cd ./tools/ci/unit/
+
+./b2g-desktop.sh
+
+# Temp fix to kill all tmp marionette userdata images.
+# This *will* likely cause weird problems if another emulator is running...
+rm -f /tmp/marionette*
+</command>
     </hudson.tasks.Shell>
   </builders>
   <publishers/>
-  <buildWrappers/>
+  <buildWrappers>
+    <hudson.plugins.build__timeout.BuildTimeoutWrapper>
+      <timeoutMinutes>10</timeoutMinutes>
+      <failBuild>true</failBuild>
+    </hudson.plugins.build__timeout.BuildTimeoutWrapper>
+  </buildWrappers>
 </project>

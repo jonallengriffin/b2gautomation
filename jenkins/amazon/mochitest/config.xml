@@ -1,0 +1,161 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <logRotator>
+    <daysToKeep>-1</daysToKeep>
+    <numToKeep>10</numToKeep>
+    <artifactDaysToKeep>-1</artifactDaysToKeep>
+    <artifactNumToKeep>-1</artifactNumToKeep>
+  </logRotator>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.security.AuthorizationMatrixProperty>
+      <permission>hudson.model.Run.Update:mochitest</permission>
+      <permission>hudson.model.Item.Discover:anonymous</permission>
+      <permission>hudson.model.Item.Discover:mochitest</permission>
+      <permission>hudson.model.Item.Read:anonymous</permission>
+      <permission>hudson.model.Item.Read:mochitest</permission>
+      <permission>hudson.model.Item.Build:mochitest</permission>
+      <permission>hudson.model.Item.Workspace:mochitest</permission>
+    </hudson.security.AuthorizationMatrixProperty>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty>
+      <projectUrl>https://github.com/jonallengriffin/b2gautomation/</projectUrl>
+    </com.coravy.hudson.plugins.github.GithubProjectProperty>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>CHUNK</name>
+          <description>The mochitest chunk to run (1 through 8), or 0 to run all chunks.</description>
+          <defaultValue>0</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>UPSTREAM_BUILD</name>
+          <description>The build number of the b2g-build that triggered this build, or 0 for the last successful build.</description>
+          <defaultValue>0</defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <scm class="hudson.plugins.git.GitSCM">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <name></name>
+        <refspec></refspec>
+        <url>git://github.com/jonallengriffin/b2gautomation.git</url>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>master</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <disableSubmodules>false</disableSubmodules>
+    <recursiveSubmodules>false</recursiveSubmodules>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <authorOrCommitter>false</authorOrCommitter>
+    <clean>false</clean>
+    <wipeOutWorkspace>false</wipeOutWorkspace>
+    <pruneBranches>false</pruneBranches>
+    <remotePoll>false</remotePoll>
+    <ignoreNotifyCommit>false</ignoreNotifyCommit>
+    <buildChooser class="hudson.plugins.git.util.DefaultBuildChooser"/>
+    <gitTool>Default</gitTool>
+    <submoduleCfg class="list"/>
+    <relativeTargetDir></relativeTargetDir>
+    <reference></reference>
+    <excludedRegions></excludedRegions>
+    <excludedUsers></excludedUsers>
+    <gitConfigName></gitConfigName>
+    <gitConfigEmail></gitConfigEmail>
+    <skipTag>false</skipTag>
+    <includedRegions></includedRegions>
+    <scmName></scmName>
+  </scm>
+  <assignedNode>ubuntu-test-1||ubuntu-test-2||ubuntu-test-3||ubuntu-test-4</assignedNode>
+  <canRoam>false</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <authToken>margaritaville</authToken>
+  <triggers class="vector"/>
+  <concurrentBuild>true</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>#!/bin/sh -x
+
+export
+
+if [ &quot;$CHUNK&quot; -eq &quot;0&quot; ]; then
+  for i in 1 2 3 4 5 6 7 8 9
+  do
+
+    wget --auth-no-challenge --http-user=mochitest --http-password=40b2aa2a0222099451ad4191461f2c7b http://ec2-107-20-108-245.compute-1.amazonaws.com/jenkins/job/mochitest/buildWithParameters?token=margaritaville\&amp;CHUNK=${i}\&amp;UPSTREAM_BUILD=${UPSTREAM_ID-0}
+
+  done
+  exit 0
+fi
+
+if [ &quot;$UPSTREAM_BUILD&quot; -eq &quot;0&quot; ]; then
+  scp jenkins@ec2-107-20-108-245.compute-1.amazonaws.com:/data/jenkins/jobs/b2g-build/lastSuccessful/archive/* . || exit 1
+else
+  scp jenkins@ec2-107-20-108-245.compute-1.amazonaws.com:/data/jenkins/jobs/b2g-build/builds/${UPSTREAM_BUILD}/archive/* . || exit 1
+fi
+
+REV=`cat git.revision`
+TOPDIR=`pwd`
+
+rm -rf objdir-gecko
+unzip testpackage.zip || exit 1
+
+rm -rf b2g-distro
+unzip package.zip || exit 1
+
+if [ ! -d &quot;xulrunner&quot; ]; then
+  wget http://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/11.0/runtimes/xulrunner-11.0.en-US.linux-x86_64.tar.bz2 || exit 1
+  tar -xjf xulrunner-11.0.en-US.linux-x86_64.tar.bz2 || exit 1
+  rm xulrunner-11.0.en-US.linux-x86_64.tar.bz2
+fi
+
+if [ ! -d &quot;venv&quot; ]; then
+  virtualenv venv
+fi
+. venv/bin/activate
+
+cd b2gautomation
+pip install -r runmochi-requirements.txt || exit 1
+
+echo &quot;run test $CHUNK&quot;
+
+cd ${TOPDIR}/objdir-gecko/_tests/testing/mochitest
+
+rm -rf b2g.json
+cp ${TOPDIR}/b2gautomation/b2g.json .
+
+export DISPLAY=:1
+
+# kill any emulator instances still lying around
+pkill -9 emulator
+
+python runtestsb2g.py --console-level INFO --b2gpath ${TOPDIR}/b2g-distro --emulator arm --remote-webserver 10.0.2.2 --total-chunks 9 --this-chunk $CHUNK --run-only-tests b2g.json --xre-path ${TOPDIR}/xulrunner --adbpath ${TOPDIR}/b2g-distro/out/host/linux-x86/bin/adb
+
+cd ${TOPDIR}/b2gautomation
+
+# copy log from the master so we can parse it
+rm -rf log
+scp jenkins@ec2-107-20-108-245.compute-1.amazonaws.com:/data/jenkins/jobs/mochitest/builds/${BUILD_NUMBER}/log . || exit 1
+
+python mochilog.py --revision $REV --logfile log --autolog --testgroup mochitests-${CHUNK} || exit 1
+
+</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers/>
+  <buildWrappers>
+    <hudson.plugins.build__timeout.BuildTimeoutWrapper>
+      <timeoutMinutes>90</timeoutMinutes>
+      <failBuild>true</failBuild>
+    </hudson.plugins.build__timeout.BuildTimeoutWrapper>
+  </buildWrappers>
+</project>

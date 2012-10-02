@@ -4,14 +4,14 @@
   <description></description>
   <logRotator>
     <daysToKeep>-1</daysToKeep>
-    <numToKeep>1</numToKeep>
+    <numToKeep>8</numToKeep>
     <artifactDaysToKeep>-1</artifactDaysToKeep>
     <artifactNumToKeep>-1</artifactNumToKeep>
   </logRotator>
   <keepDependencies>false</keepDependencies>
   <properties>
     <com.coravy.hudson.plugins.github.GithubProjectProperty>
-      <projectUrl>https://github.com/doublec/mozilla-central/</projectUrl>
+      <projectUrl>https://github.com/mozilla/releases-mozilla-central/</projectUrl>
     </com.coravy.hudson.plugins.github.GithubProjectProperty>
   </properties>
   <scm class="hudson.plugins.git.GitSCM">
@@ -20,7 +20,7 @@
       <hudson.plugins.git.UserRemoteConfig>
         <name></name>
         <refspec></refspec>
-        <url>git://github.com/doublec/mozilla-central.git</url>
+        <url>git://github.com/mozilla/releases-mozilla-central.git</url>
       </hudson.plugins.git.UserRemoteConfig>
     </userRemoteConfigs>
     <branches>
@@ -50,7 +50,8 @@
     <includedRegions></includedRegions>
     <scmName></scmName>
   </scm>
-  <canRoam>true</canRoam>
+  <assignedNode>master</assignedNode>
+  <canRoam>false</canRoam>
   <disabled>false</disabled>
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
@@ -87,14 +88,13 @@ mkdir -p b2g-distro/marionette-client
 cp .config b2g-distro
 cp load-config.sh b2g-distro
 cp run-emulator.sh b2g-distro
-cp out/host/linux-x86/bin/emulator b2g-distro/out/host/linux-x86/bin
-cp out/host/linux-x86/bin/emulator-arm b2g-distro/out/host/linux-x86/bin
-cp out/host/linux-x86/bin/adb b2g-distro/out/host/linux-x86/bin
+cp -R out/host/linux-x86/bin b2g-distro/out/host/linux-x86
+cp -R out/host/linux-x86/lib b2g-distro/out/host/linux-x86
+cp -R out/host/linux-x86/usr b2g-distro/out/host/linux-x86
 cp prebuilts/qemu-kernel/arm/kernel-qemu-armv7 b2g-distro/prebuilts/qemu-kernel/arm
 cp -R out/target/product/generic b2g-distro/out/target/product
 cp -R development/tools/emulator/skins b2g-distro/development/tools/emulator
 cp -R gecko/testing/marionette/client b2g-distro/marionette-client
-#cp -R out/host/linux-x86/usr/share/pc-bios b2g-distro/out/host/linux-x86/usr/share
 
 zip -r ../package.zip b2g-distro/
 
@@ -111,13 +111,32 @@ echo &quot;BUILD SUCCEEDED&quot;
       <latestOnly>false</latestOnly>
     </hudson.tasks.ArtifactArchiver>
     <hudson.tasks.BuildTrigger>
-      <childProjects>webapi-marionette-test, mochitest-plain</childProjects>
+      <childProjects>webapi-marionette-test, gaia-integration-test</childProjects>
       <threshold>
         <name>SUCCESS</name>
         <ordinal>0</ordinal>
         <color>BLUE</color>
       </threshold>
     </hudson.tasks.BuildTrigger>
+    <hudson.tasks.Mailer>
+      <recipients>qa-b2g@mozilla.org dev-b2g@lists.mozilla.org</recipients>
+      <dontNotifyEveryUnstableBuild>true</dontNotifyEveryUnstableBuild>
+      <sendToIndividuals>false</sendToIndividuals>
+    </hudson.tasks.Mailer>
+    <hudson.plugins.parameterizedtrigger.BuildTrigger>
+      <configs>
+        <hudson.plugins.parameterizedtrigger.BuildTriggerConfig>
+          <configs>
+            <hudson.plugins.parameterizedtrigger.PredefinedBuildParameters>
+              <properties>UPSTREAM_ID=$BUILD_NUMBER</properties>
+            </hudson.plugins.parameterizedtrigger.PredefinedBuildParameters>
+          </configs>
+          <projects>mochitest</projects>
+          <condition>UNSTABLE_OR_BETTER</condition>
+          <triggerWithNoParameters>false</triggerWithNoParameters>
+        </hudson.plugins.parameterizedtrigger.BuildTriggerConfig>
+      </configs>
+    </hudson.plugins.parameterizedtrigger.BuildTrigger>
   </publishers>
   <buildWrappers>
     <hudson.plugins.locksandlatches.LockWrapper>
