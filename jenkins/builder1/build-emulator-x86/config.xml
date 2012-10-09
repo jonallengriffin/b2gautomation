@@ -51,44 +51,38 @@
     <scmName></scmName>
   </scm>
   <canRoam>true</canRoam>
-  <disabled>false</disabled>
+  <disabled>true</disabled>
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
-  <triggers class="vector">
-    <hudson.triggers.TimerTrigger>
-      <spec>0 1 * * *</spec>
-    </hudson.triggers.TimerTrigger>
-  </triggers>
+  <triggers class="vector"/>
   <concurrentBuild>false</concurrentBuild>
   <builders>
+    <hudson.plugins.copyartifact.CopyArtifact>
+      <projectName>make-config</projectName>
+      <filter>config.zip</filter>
+      <target></target>
+      <selector class="hudson.plugins.copyartifact.TriggeredBuildSelector">
+        <fallbackToLastSuccessful>true</fallbackToLastSuccessful>
+      </selector>
+    </hudson.plugins.copyartifact.CopyArtifact>
     <hudson.tasks.Shell>
-      <command>export AUTOCONF=/usr/local/bin/autoconf2.13
+      <command>rm -rf config
+mkdir config
+unzip -o config.zip -d config
+
+export AUTOCONF=/usr/local/bin/autoconf2.13
 ccache --clear
 rm -rf objdir-gecko
 rm -rf out
 rm -rf gaia
-./config.sh emulator-x86
-./build.sh
+./config.sh emulator-x86 config/default.xml
+
 </command>
     </hudson.tasks.Shell>
     <hudson.tasks.Shell>
-      <command>if [ ! -d &quot;b2gautomation&quot; ]; then
-  git clone git://github.com/jonallengriffin/b2gautomation.git
-fi
-cd b2gautomation
-git pull
-virtualenv .
-source bin/activate
-python setup.py develop
-cd b2gautomation
-python make_template_manifest.py ../..
-python make_device_manifests.py default.xml
-date +%Y-%m-%d &gt; timestamp.txt
-zip ../../config.zip *.xml timestamp.txt
-</command>
-    </hudson.tasks.Shell>
-    <hudson.tasks.Shell>
-      <command>rm -rf package.zip
+      <command>./build.sh
+
+rm -rf package.zip
 rm -rf b2g-distro
 mkdir -p b2g-distro/out/target/product/generic_x86
 mkdir -p b2g-distro/prebuilts/qemu-kernel/x86
@@ -101,6 +95,7 @@ cp run-emulator.sh b2g-distro
 cp b2gautomation/b2gautomation/default.xml b2g-distro
 cp out/host/linux-x86/bin/emulator-x86 b2g-distro/out/host/linux-x86/bin
 cp out/host/linux-x86/bin/adb b2g-distro/out/host/linux-x86/bin
+cp -R out/host/linux-x86/lib b2g-distro/out/host/linux-x86
 cp prebuilts/qemu-kernel/x86/kernel-qemu b2g-distro/prebuilts/qemu-kernel/x86
 cp -R out/target/product/generic_x86 b2g-distro/out/target/product
 cp -R development/tools/emulator/skins b2g-distro/development/tools/emulator
@@ -147,19 +142,6 @@ mv package.zip $DEST
       </delegate>
     </jenkins.plugins.publish__over__ssh.BapSshBuilderPlugin>
   </builders>
-  <publishers>
-    <hudson.tasks.ArtifactArchiver>
-      <artifacts>config.zip</artifacts>
-      <latestOnly>false</latestOnly>
-    </hudson.tasks.ArtifactArchiver>
-    <hudson.tasks.BuildTrigger>
-      <childProjects>build-nexus-s, build-sgs2, build-emulator-arm</childProjects>
-      <threshold>
-        <name>FAILURE</name>
-        <ordinal>2</ordinal>
-        <color>RED</color>
-      </threshold>
-    </hudson.tasks.BuildTrigger>
-  </publishers>
+  <publishers/>
   <buildWrappers/>
 </project>

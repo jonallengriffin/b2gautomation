@@ -58,10 +58,12 @@
   <concurrentBuild>false</concurrentBuild>
   <builders>
     <hudson.plugins.copyartifact.CopyArtifact>
-      <projectName>build-emulator-x86</projectName>
+      <projectName>make-config</projectName>
       <filter>config.zip</filter>
       <target></target>
-      <selector class="hudson.plugins.copyartifact.StatusBuildSelector"/>
+      <selector class="hudson.plugins.copyartifact.TriggeredBuildSelector">
+        <fallbackToLastSuccessful>true</fallbackToLastSuccessful>
+      </selector>
     </hudson.plugins.copyartifact.CopyArtifact>
     <hudson.tasks.Shell>
       <command>rm -rf buildconfig
@@ -86,9 +88,10 @@ mkdir -p b2g-distro/development/tools/emulator/skins
 cp .config b2g-distro
 cp load-config.sh b2g-distro
 cp run-emulator.sh b2g-distro
-cp buildconfig/default.xml default.xml
+cp buildconfig/default.xml b2g-distro/default.xml
 cp out/host/linux-x86/bin/emulator b2g-distro/out/host/linux-x86/bin
 cp out/host/linux-x86/bin/emulator-arm b2g-distro/out/host/linux-x86/bin
+cp -R out/host/linux-x86/lib b2g-distro/out/host/linux-x86
 cp out/host/linux-x86/bin/adb b2g-distro/out/host/linux-x86/bin
 cp prebuilts/qemu-kernel/arm/kernel-qemu-armv7 b2g-distro/prebuilts/qemu-kernel/arm
 cp -R out/target/product/generic b2g-distro/out/target/product
@@ -99,6 +102,10 @@ TIMESTAMP=`cat buildconfig/timestamp.txt`
 DEST=&quot;emulator-arm_linux_$TIMESTAMP.zip&quot;
 rm -rf emulator-arm_linux*
 mv package.zip $DEST
+
+rm -rf source_emulator-arm*
+cp buildconfig/default.xml &quot;source_emulator-arm_${TIMESTAMP}.xml&quot;
+
 </command>
     </hudson.tasks.Shell>
     <jenkins.plugins.publish__over__ssh.BapSshBuilderPlugin>
@@ -121,6 +128,27 @@ mv package.zip $DEST
                   <execCommand>chmod -R a+r /mnt/netapp/stage/releases.mozilla.com/b2g
 python organize.py --directory /mnt/netapp/stage/releases.mozilla.com/b2g
 </execCommand>
+                  <execTimeout>120000</execTimeout>
+                  <usePty>false</usePty>
+                </jenkins.plugins.publish__over__ssh.BapSshTransfer>
+              </transfers>
+              <useWorkspaceInPromotion>false</useWorkspaceInPromotion>
+              <usePromotionTimestamp>false</usePromotionTimestamp>
+            </jenkins.plugins.publish__over__ssh.BapSshPublisher>
+            <jenkins.plugins.publish__over__ssh.BapSshPublisher>
+              <configName>ftp.mozilla.org</configName>
+              <verbose>false</verbose>
+              <transfers>
+                <jenkins.plugins.publish__over__ssh.BapSshTransfer>
+                  <remoteDirectory></remoteDirectory>
+                  <sourceFiles>source*</sourceFiles>
+                  <excludes></excludes>
+                  <removePrefix></removePrefix>
+                  <remoteDirectorySDF>false</remoteDirectorySDF>
+                  <flatten>false</flatten>
+                  <cleanRemote>false</cleanRemote>
+                  <execCommand>chmod -R a+r /mnt/netapp/stage/archive.mozilla.org/pub/b2g/manifests/*
+python organize.py --directory /mnt/netapp/stage/archive.mozilla.org/pub/b2g/manifests</execCommand>
                   <execTimeout>120000</execTimeout>
                   <usePty>false</usePty>
                 </jenkins.plugins.publish__over__ssh.BapSshTransfer>

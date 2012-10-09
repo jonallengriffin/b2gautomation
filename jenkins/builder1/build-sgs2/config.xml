@@ -51,17 +51,19 @@
     <scmName></scmName>
   </scm>
   <canRoam>true</canRoam>
-  <disabled>false</disabled>
+  <disabled>true</disabled>
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
   <triggers class="vector"/>
   <concurrentBuild>false</concurrentBuild>
   <builders>
     <hudson.plugins.copyartifact.CopyArtifact>
-      <projectName>build-emulator-x86</projectName>
+      <projectName>make-config</projectName>
       <filter>config.zip</filter>
       <target></target>
-      <selector class="hudson.plugins.copyartifact.StatusBuildSelector"/>
+      <selector class="hudson.plugins.copyartifact.TriggeredBuildSelector">
+        <fallbackToLastSuccessful>true</fallbackToLastSuccessful>
+      </selector>
     </hudson.plugins.copyartifact.CopyArtifact>
     <hudson.tasks.Shell>
       <command>rm -rf config
@@ -70,19 +72,25 @@ unzip -o config.zip -d config
 
 export AUTOCONF=/usr/local/bin/autoconf2.13
 export ANDROIDFS_DIR=/data/sgs2
-export GAIA_DOMAIN=thisdomaindoesnotexist.org
 rm -rf out
 rm -rf objdir-gecko
 rm -rf gaia
+rm -rf gonk-misc
 ccache --clear
 ./config.sh galaxy-s2 config/default-sgs2.xml
+
+# monkey patch mozconfig
+cd gonk-misc
+echo &quot;
+export MOZILLA_OFFICIAL=1&quot; &gt;&gt; default-gecko-config
+cd ..
+
 ./build.sh
 
-if [ ! -d &quot;b2gautomation&quot; ]; then
-  git clone git://github.com/jonallengriffin/b2gautomation.git
-fi
+rm -rf default.xml
+rm -rf b2gautomation
+git clone git://github.com/jonallengriffin/b2gautomation.git
 cd b2gautomation
-git pull
 virtualenv .
 source bin/activate
 python setup.py develop
@@ -107,9 +115,12 @@ zip -r package.zip b2g-distro/
 
 rm -rf sgs2_*
 TIMESTAMP=`cat config/timestamp.txt`
-DEST=&quot;sgs2_$TIMESTAMP.zip&quot;
-rm -rf $DEST
+DEST=&quot;sgs2_${TIMESTAMP}.zip&quot;
 mv package.zip $DEST
+
+rm -rf source_sgs2*
+cp default.xml &quot;source_sgs2_${TIMESTAMP}.xml&quot;
+
 
 </command>
     </hudson.tasks.Shell>
@@ -132,6 +143,27 @@ mv package.zip $DEST
                   <cleanRemote>false</cleanRemote>
                   <execCommand>chmod a+r /mnt/netapp/stage/releases.mozilla.com/b2g/*
 python organize.py --directory /mnt/netapp/stage/releases.mozilla.com/b2g</execCommand>
+                  <execTimeout>120000</execTimeout>
+                  <usePty>false</usePty>
+                </jenkins.plugins.publish__over__ssh.BapSshTransfer>
+              </transfers>
+              <useWorkspaceInPromotion>false</useWorkspaceInPromotion>
+              <usePromotionTimestamp>false</usePromotionTimestamp>
+            </jenkins.plugins.publish__over__ssh.BapSshPublisher>
+            <jenkins.plugins.publish__over__ssh.BapSshPublisher>
+              <configName>ftp.mozilla.org</configName>
+              <verbose>false</verbose>
+              <transfers>
+                <jenkins.plugins.publish__over__ssh.BapSshTransfer>
+                  <remoteDirectory></remoteDirectory>
+                  <sourceFiles>source*</sourceFiles>
+                  <excludes></excludes>
+                  <removePrefix></removePrefix>
+                  <remoteDirectorySDF>false</remoteDirectorySDF>
+                  <flatten>false</flatten>
+                  <cleanRemote>false</cleanRemote>
+                  <execCommand>chmod -R a+r /mnt/netapp/stage/archive.mozilla.org/pub/b2g/manifests/*
+python organize.py --directory /mnt/netapp/stage/archive.mozilla.org/pub/b2g/manifests</execCommand>
                   <execTimeout>120000</execTimeout>
                   <usePty>false</usePty>
                 </jenkins.plugins.publish__over__ssh.BapSshTransfer>

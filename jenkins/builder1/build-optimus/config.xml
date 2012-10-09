@@ -70,21 +70,17 @@
 mkdir config
 unzip -o config.zip -d config
 
-if [ ! -d &quot;mozilla-central&quot; ]; then
-  hg clone http://hg.mozilla.org/mozilla-central
-fi
-cd mozilla-central
-export GECKO_PATH=`pwd`
-hg pull -u
-cd ..
-
 export AUTOCONF=/usr/local/bin/autoconf2.13
 ccache --clear
 rm -rf out
 rm -rf objdir-gecko
 rm -rf gaia
 rm -rf gonk-misc
-./config.sh nexus-s config/default-nexuss.xml
+cp -R /data/jenkins/backup-m4 .
+./config.sh optimus-l5 config/default-m4.xml
+cd bionic
+git apply ../backup-m4/bionic.patch
+cd ..
 
 # monkey patch mozconfig
 cd gonk-misc
@@ -94,38 +90,50 @@ cd ..
 
 ./build.sh
 
-rm -rf default.xml
-rm -rf b2gautomation
-git clone git://github.com/jonallengriffin/b2gautomation.git
+#undo bionic patch
+cd bionic
+git checkout linker/linker.c
+cd ..
+
+if [ ! -d &quot;b2gautomation&quot; ]; then
+  git clone git://github.com/jonallengriffin/b2gautomation.git
+fi
 cd b2gautomation
+git pull
 virtualenv .
 source bin/activate
 python setup.py develop
 cd b2gautomation
-python make_template_manifest.py ../.. --source ../../config/default-nexuss.xml --dest ../../default.xml
+python make_template_manifest.py ../.. --source ../../config/default-m4.xml --dest ../../default.xml
 cd ../..
 
 rm -rf b2g-distro
 mkdir b2g-distro
-cp default.xml b2g-distro/
+mkdir b2g-distro/local
+mkdir b2g-distro/settings
 cp b2gautomation/b2gautomation/devices/README.txt b2g-distro/
-cp out/target/product/crespo/*.img b2g-distro/
-cp out/target/product/crespo/*.txt b2g-distro/
+cp default.xml b2g-distro/default.xml
+cp out/target/product/m4/*.img b2g-distro/
+cp backup-m4/boot.img b2g-distro/
+cp out/target/product/m4/*.txt b2g-distro/
 cp out/host/linux-x86/bin/adb b2g-distro/
 cp out/host/linux-x86/bin/fastboot b2g-distro/
-cp b2gautomation/b2gautomation/devices/nexus-s/* b2g-distro/
+cp b2gautomation/b2gautomation/devices/m4/* b2g-distro/
+cp -R gaia/profile b2g-distro/
+cp -R gaia/profile/indexedDB/chrome/2588645841ssegtnti b2g-distro/settings/
+cp gaia/profile/indexedDB/chrome/2588645841ssegtnti.sqlite b2g-distro/settings/
 
 rm -rf package.zip
 zip -r package.zip b2g-distro/
 
-rm -rf nexus-s_*
+rm -rf m4_*
 TIMESTAMP=`cat config/timestamp.txt`
-DEST=&quot;nexus-s_${TIMESTAMP}_trunk.zip&quot;
+DEST=&quot;m4_${TIMESTAMP}.zip&quot;
+rm -rf $DEST
 mv package.zip $DEST
 
-rm -rf source_nexus*
-cp default.xml &quot;source_nexus-s_${TIMESTAMP}.xml&quot;
-
+rm -rf source_m4*
+cp default.xml &quot;source_m4_${TIMESTAMP}.xml&quot;
 
 
 </command>
@@ -141,7 +149,7 @@ cp default.xml &quot;source_nexus-s_${TIMESTAMP}.xml&quot;
               <transfers>
                 <jenkins.plugins.publish__over__ssh.BapSshTransfer>
                   <remoteDirectory></remoteDirectory>
-                  <sourceFiles>nexus-s*.zip</sourceFiles>
+                  <sourceFiles>m4_*.zip</sourceFiles>
                   <excludes></excludes>
                   <removePrefix></removePrefix>
                   <remoteDirectorySDF>false</remoteDirectorySDF>

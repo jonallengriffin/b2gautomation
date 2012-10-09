@@ -4,7 +4,7 @@
   <description></description>
   <logRotator>
     <daysToKeep>-1</daysToKeep>
-    <numToKeep>5</numToKeep>
+    <numToKeep>20</numToKeep>
     <artifactDaysToKeep>-1</artifactDaysToKeep>
     <artifactNumToKeep>-1</artifactNumToKeep>
   </logRotator>
@@ -51,7 +51,7 @@
     <scmName></scmName>
   </scm>
   <canRoam>true</canRoam>
-  <disabled>true</disabled>
+  <disabled>false</disabled>
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
   <triggers class="vector"/>
@@ -70,21 +70,15 @@
 mkdir config
 unzip -o config.zip -d config
 
-if [ ! -d &quot;mozilla-central&quot; ]; then
-  hg clone http://hg.mozilla.org/mozilla-central
-fi
-cd mozilla-central
-export GECKO_PATH=`pwd`
-hg pull -u
-cd ..
-
 export AUTOCONF=/usr/local/bin/autoconf2.13
+export ANDROIDFS_DIR=/data/unagi/backup-unagi
 ccache --clear
 rm -rf out
 rm -rf objdir-gecko
 rm -rf gaia
 rm -rf gonk-misc
-./config.sh nexus-s config/default-nexuss.xml
+cp /data/otoro/*.zip .
+./config.sh unagi config/default-otoro.xml
 
 # monkey patch mozconfig
 cd gonk-misc
@@ -92,42 +86,52 @@ echo &quot;
 export MOZILLA_OFFICIAL=1&quot; &gt;&gt; default-gecko-config
 cd ..
 
-./build.sh
+VARIANT=user ./build.sh
+VARIANT=user ./build.sh gecko-update-full
 
-rm -rf default.xml
-rm -rf b2gautomation
-git clone git://github.com/jonallengriffin/b2gautomation.git
+if [ ! -d &quot;b2gautomation&quot; ]; then
+  git clone git://github.com/jonallengriffin/b2gautomation.git
+fi
 cd b2gautomation
+git pull
 virtualenv .
 source bin/activate
 python setup.py develop
 cd b2gautomation
-python make_template_manifest.py ../.. --source ../../config/default-nexuss.xml --dest ../../default.xml
+python make_template_manifest.py ../.. --source ../../config/default-otoro.xml --dest ../../default.xml
 cd ../..
 
 rm -rf b2g-distro
 mkdir b2g-distro
-cp default.xml b2g-distro/
+mkdir b2g-distro/local
+mkdir b2g-distro/settings
 cp b2gautomation/b2gautomation/devices/README.txt b2g-distro/
-cp out/target/product/crespo/*.img b2g-distro/
-cp out/target/product/crespo/*.txt b2g-distro/
+cp default.xml b2g-distro/default.xml
+cp out/target/product/unagi/*.img b2g-distro/
+cp /data/unagi/boot.img b2g-distro/
+cp out/target/product/unagi/*.txt b2g-distro/
 cp out/host/linux-x86/bin/adb b2g-distro/
 cp out/host/linux-x86/bin/fastboot b2g-distro/
-cp b2gautomation/b2gautomation/devices/nexus-s/* b2g-distro/
+cp b2gautomation/b2gautomation/devices/unagi/* b2g-distro/
+cp -R gaia/profile/indexedDB/chrome/2588645841ssegtnti b2g-distro/settings/
+cp gaia/profile/indexedDB/chrome/2588645841ssegtnti.sqlite b2g-distro/settings/
 
 rm -rf package.zip
 zip -r package.zip b2g-distro/
 
-rm -rf nexus-s_*
+rm -rf unagi_*
 TIMESTAMP=`cat config/timestamp.txt`
-DEST=&quot;nexus-s_${TIMESTAMP}_trunk.zip&quot;
+DEST=&quot;unagi_${TIMESTAMP}.zip&quot;
+rm -rf $DEST
 mv package.zip $DEST
 
-rm -rf source_nexus*
-cp default.xml &quot;source_nexus-s_${TIMESTAMP}.xml&quot;
+rm -rf source_unagi*
+cp default.xml &quot;source_unagi_${TIMESTAMP}.xml&quot;
 
-
-
+rm -rf b2g_update*
+STAMP=`date +%Y-%m-%d_%H%M%S`
+cp objdir-gecko/dist/b2g-update/b2g-gecko-update.mar &quot;b2g_update_${STAMP}.mar&quot;
+cp default.xml &quot;b2g_update_source_${STAMP}.xml&quot;
 </command>
     </hudson.tasks.Shell>
     <jenkins.plugins.publish__over__ssh.BapSshBuilderPlugin>
@@ -141,7 +145,7 @@ cp default.xml &quot;source_nexus-s_${TIMESTAMP}.xml&quot;
               <transfers>
                 <jenkins.plugins.publish__over__ssh.BapSshTransfer>
                   <remoteDirectory></remoteDirectory>
-                  <sourceFiles>nexus-s*.zip</sourceFiles>
+                  <sourceFiles>unagi_*.zip</sourceFiles>
                   <excludes></excludes>
                   <removePrefix></removePrefix>
                   <remoteDirectorySDF>false</remoteDirectorySDF>
@@ -157,19 +161,18 @@ python organize.py --directory /mnt/netapp/stage/releases.mozilla.com/b2g</execC
               <usePromotionTimestamp>false</usePromotionTimestamp>
             </jenkins.plugins.publish__over__ssh.BapSshPublisher>
             <jenkins.plugins.publish__over__ssh.BapSshPublisher>
-              <configName>ftp.mozilla.org</configName>
+              <configName>updates.boo2gecko.org</configName>
               <verbose>false</verbose>
               <transfers>
                 <jenkins.plugins.publish__over__ssh.BapSshTransfer>
                   <remoteDirectory></remoteDirectory>
-                  <sourceFiles>source*</sourceFiles>
+                  <sourceFiles>b2g_update*</sourceFiles>
                   <excludes></excludes>
                   <removePrefix></removePrefix>
                   <remoteDirectorySDF>false</remoteDirectorySDF>
                   <flatten>false</flatten>
                   <cleanRemote>false</cleanRemote>
-                  <execCommand>chmod -R a+r /mnt/netapp/stage/archive.mozilla.org/pub/b2g/manifests/*
-python organize.py --directory /mnt/netapp/stage/archive.mozilla.org/pub/b2g/manifests</execCommand>
+                  <execCommand>cd /data/update-channels/nightly &amp;&amp; bash makeupdate.sh</execCommand>
                   <execTimeout>120000</execTimeout>
                   <usePty>false</usePty>
                 </jenkins.plugins.publish__over__ssh.BapSshTransfer>
@@ -186,6 +189,11 @@ python organize.py --directory /mnt/netapp/stage/archive.mozilla.org/pub/b2g/man
       </delegate>
     </jenkins.plugins.publish__over__ssh.BapSshBuilderPlugin>
   </builders>
-  <publishers/>
+  <publishers>
+    <hudson.tasks.ArtifactArchiver>
+      <artifacts>b2g_update*.xml</artifacts>
+      <latestOnly>false</latestOnly>
+    </hudson.tasks.ArtifactArchiver>
+  </publishers>
   <buildWrappers/>
 </project>
