@@ -43,7 +43,7 @@ update_time()
 flash_fastboot()
 {
 	echo "Rebooting into device bootloader..."
-	$ADB reboot bootloader || fail
+	$ADB reboot bootloader
 	$FASTBOOT devices
 
 	if [ $? -ne 0 ]; then
