@@ -49,40 +49,23 @@ def make_device_manifests(template_manifest):
     execute_cmd(cmd, cwd)
 
     # switch to the galaxy-s2 branch
-    cmd = ['git', 'checkout', 'galaxy-s2']
+    cmd = ['git', 'checkout', 'nightly']
     execute_cmd(cmd, git_dir)
 
     # generate the galaxy-s2 manifest
     update_manifest(dom,
-                    os.path.join(git_dir, 'default.xml'),
+                    os.path.join(git_dir, 'galaxy-s2.xml'),
                     os.path.join(os.path.dirname(template_manifest), 'default-sgs2.xml'))
-
-    # switch to the crespo (nexus-s) branch
-    cmd = ['git', 'checkout', 'crespo']
-    execute_cmd(cmd, git_dir)
 
     # generate the nexus-s manifest
     update_manifest(dom,
-                    os.path.join(git_dir, 'default.xml'),
+                    os.path.join(git_dir, 'nexus-s.xml'),
                     os.path.join(os.path.dirname(template_manifest), 'default-nexuss.xml'))
-
-    # switch to the otoro branch
-    cmd = ['git', 'checkout', 'otoro']
-    execute_cmd(cmd, git_dir)
 
     # generate the otoro manifest
     update_manifest(dom,
-                    os.path.join(git_dir, 'default.xml'),
+                    os.path.join(git_dir, 'otoro.xml'),
                     os.path.join(os.path.dirname(template_manifest), 'default-otoro.xml'))
-
-    # switch to the m4 branch
-    cmd = ['git', 'checkout', 'm4']
-    execute_cmd(cmd, git_dir)
-
-    # generate the m4 manifest
-    update_manifest(dom,
-                    os.path.join(git_dir, 'default.xml'),
-                    os.path.join(os.path.dirname(template_manifest), 'default-m4.xml'))
 
     # remove the git directory
     shutil.rmtree(git_dir)
