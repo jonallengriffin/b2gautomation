@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <updates>
-  <update type="minor" appVersion="18.0a1" version="18.0a1" extensionVersion="18.0a1" buildID="20121002074726" licenseURL="http://www.mozilla.com/test/sample-eula.html" detailsURL="http://www.mozilla.com/test/sample-details.html">
-    <patch type="complete" URL="http://update.boot2gecko.org/nightly/b2g_update_2012-10-02_074726.mar" hashFunction="SHA512" hashValue="d1d7a58259e1e329758f9b6873b33b4fb75b156895419242481de11ef02400de11d7e0e02addf0e2e1ca7694bd9ec4d0b52417cf14d75c859202c3c1163e3271" size="42816565"/>
+  <update type="minor" appVersion="18.0a1" version="18.0a2" extensionVersion="18.0a2" buildID="20121016071214" licenseURL="http://www.mozilla.com/test/sample-eula.html" detailsURL="http://www.mozilla.com/test/sample-details.html">
+    <patch type="complete" URL="http://update.boot2gecko.org/nightly/b2g_update_2012-10-16_075227.mar" hashFunction="SHA512" hashValue="3c9387aec617e42ad52b4555ac83ee341279f614fa1cdbfd1f4c4085be6924157cf1610227b0bf1069ce1189d791aea42770fa8a1d657146c0d51dd3bfbc0a3d" size="42719106"/>
   </update>
 </updates>
 
