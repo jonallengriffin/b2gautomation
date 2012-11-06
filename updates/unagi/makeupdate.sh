@@ -7,6 +7,7 @@ SIZE=$(stat -c "%s" $FILE)
 APPVERSION=$(grep ^Version= $INI | sed 's/Version=//')
 VERSION=$(grep ^MinVersion= $INI | sed 's/MinVersion//')
 DIR=$(pwd | sed 's/\/data\/update-channels\///' | sed s'/\//\\\//g')
+UPDATENAME="update_$DATESTAMP.xml"
 
 cat update-template.xml \
   | sed "s/\\\$APPVERSION\\\$/$APPVERSION/g" \
@@ -19,4 +20,4 @@ cat update-template.xml \
   > update.xml
 
 cat update.xml
-
+cp update.xml $UPDATENAME
