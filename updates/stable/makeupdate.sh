@@ -1,16 +1,11 @@
-#exit 0
-
 FILE=`ls -rt *.mar | tail -1`
-APPVERSION="18.0a1"
 VERSION="18.0a2"
 SHA512=$(shasum -a 512 $FILE | sed 's/ .*//')
 DATESTAMP=$(echo $FILE | sed 's/b2g_stable_update_//' | sed 's/\.mar//')
 INI="application_${DATESTAMP}.ini"
 BUILD_ID=$(grep BuildID= $INI | sed 's/BuildID=//')
 SIZE=$(stat -c "%s" $FILE)
-
-echo $FILE
-echo $BUILD_ID
+APPVERSION=$(grep ^Version= $INI | sed 's/Version=//')
 
 cat update-template.xml \
   | sed "s/\\\$APPVERSION\\\$/$APPVERSION/g" \
