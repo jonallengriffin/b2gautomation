@@ -125,17 +125,12 @@ if [ ! -d &quot;b2gautomation&quot; ]; then
 fi
 cd b2gautomation
 git pull
-cd ..
-cp b2gautomation/updates/unagi/makeupdate.sh .
-cp b2gautomation/updates/unagi/update-template.xml .
-
-# copy app version to app.prop file
-VERSION=$(grep ^Version= objdir-gecko/dist/b2g/application.ini | sed &apos;s/Version=//&apos;)
-echo &quot;VERSION = $VERSION&quot; &gt; app.prop
-echo &quot;UPDATEDIR = /data/update-channels/unagi/$VERSION&quot; &gt;&gt; app.prop
-
-rm -rf default.xml
-cp $XML default.xml
+virtualenv .
+source bin/activate
+python setup.py develop
+cd b2gautomation
+python make_template_manifest.py ../.. --source ../../source.xml --dest ../../default.xml
+cd ../..
 
 rm -rf b2g_stable_update*
 STAMP=`date +%Y-%m-%d_%H%M%S`
@@ -168,108 +163,86 @@ cp default.xml &quot;source_unagi_stable_${TIMESTAMP}.xml&quot;
 
 rm -rf application*
 cp objdir-gecko/dist/b2g/application.ini application_${STAMP}.ini
-
 </command>
     </hudson.tasks.Shell>
-    <EnvInjectBuilder plugin="envinject@1.73">
-      <info>
-        <propertiesFilePath>app.prop</propertiesFilePath>
-      </info>
-    </EnvInjectBuilder>
-    <hudson.tasks.Shell>
-      <command>export</command>
-    </hudson.tasks.Shell>
-    <jenkins.plugins.publish__over__ssh.BapSshBuilderPlugin plugin="publish-over-ssh@1.7">
-      <delegate>
-        <consolePrefix>SSH: </consolePrefix>
-        <delegate>
-          <publishers>
-            <jenkins.plugins.publish__over__ssh.BapSshPublisher>
-              <configName>updates.boot2gecko.org/root</configName>
-              <verbose>false</verbose>
-              <transfers>
-                <jenkins.plugins.publish__over__ssh.BapSshTransfer>
-                  <remoteDirectory></remoteDirectory>
-                  <sourceFiles></sourceFiles>
-                  <excludes></excludes>
-                  <removePrefix></removePrefix>
-                  <remoteDirectorySDF>false</remoteDirectorySDF>
-                  <flatten>false</flatten>
-                  <cleanRemote>false</cleanRemote>
-                  <execCommand>if [ ! -d  &quot;$UPDATEDIR&quot; ]; then mkdir &quot;$UPDATEDIR&quot;; fi</execCommand>
-                  <execTimeout>120000</execTimeout>
-                  <usePty>false</usePty>
-                </jenkins.plugins.publish__over__ssh.BapSshTransfer>
-                <jenkins.plugins.publish__over__ssh.BapSshTransfer>
-                  <remoteDirectory>$UPDATEDIR</remoteDirectory>
-                  <sourceFiles>b2g_stable_update*, application*, app.prop, makeupdate.sh, update-template.xml</sourceFiles>
-                  <excludes></excludes>
-                  <removePrefix></removePrefix>
-                  <remoteDirectorySDF>false</remoteDirectorySDF>
-                  <flatten>false</flatten>
-                  <cleanRemote>false</cleanRemote>
-                  <execCommand></execCommand>
-                  <execTimeout>120000</execTimeout>
-                  <usePty>false</usePty>
-                </jenkins.plugins.publish__over__ssh.BapSshTransfer>
-                <jenkins.plugins.publish__over__ssh.BapSshTransfer>
-                  <remoteDirectory></remoteDirectory>
-                  <sourceFiles></sourceFiles>
-                  <excludes></excludes>
-                  <removePrefix></removePrefix>
-                  <remoteDirectorySDF>false</remoteDirectorySDF>
-                  <flatten>false</flatten>
-                  <cleanRemote>false</cleanRemote>
-                  <execCommand>cd $UPDATEDIR &amp;&amp; chmod a+x makeupdate.sh &amp;&amp; ./makeupdate.sh</execCommand>
-                  <execTimeout>120000</execTimeout>
-                  <usePty>false</usePty>
-                </jenkins.plugins.publish__over__ssh.BapSshTransfer>
-              </transfers>
-              <useWorkspaceInPromotion>false</useWorkspaceInPromotion>
-              <usePromotionTimestamp>false</usePromotionTimestamp>
-            </jenkins.plugins.publish__over__ssh.BapSshPublisher>
-            <jenkins.plugins.publish__over__ssh.BapSshPublisher>
-              <configName>stage/promoted</configName>
-              <verbose>false</verbose>
-              <transfers>
-                <jenkins.plugins.publish__over__ssh.BapSshTransfer>
-                  <remoteDirectory></remoteDirectory>
-                  <sourceFiles>nightly*</sourceFiles>
-                  <excludes></excludes>
-                  <removePrefix></removePrefix>
-                  <remoteDirectorySDF>false</remoteDirectorySDF>
-                  <flatten>false</flatten>
-                  <cleanRemote>false</cleanRemote>
-                  <execCommand>chmod a+r /mnt/netapp/stage/releases.mozilla.com/b2g/promoted_to_stable/*</execCommand>
-                  <execTimeout>120000</execTimeout>
-                  <usePty>false</usePty>
-                </jenkins.plugins.publish__over__ssh.BapSshTransfer>
-              </transfers>
-              <useWorkspaceInPromotion>false</useWorkspaceInPromotion>
-              <usePromotionTimestamp>false</usePromotionTimestamp>
-            </jenkins.plugins.publish__over__ssh.BapSshPublisher>
-          </publishers>
-          <continueOnError>false</continueOnError>
-          <failOnError>false</failOnError>
-          <alwaysPublishFromMaster>false</alwaysPublishFromMaster>
-          <hostConfigurationAccess class="jenkins.plugins.publish_over_ssh.BapSshPublisherPlugin" reference="../.."/>
-        </delegate>
-      </delegate>
-    </jenkins.plugins.publish__over__ssh.BapSshBuilderPlugin>
   </builders>
   <publishers>
     <hudson.tasks.ArtifactArchiver>
-      <artifacts>source_unagi_stable*, b2g_stable*, application*</artifacts>
+      <artifacts>source_unagi_stable*</artifacts>
       <latestOnly>false</latestOnly>
     </hudson.tasks.ArtifactArchiver>
-    <hudson.tasks.BuildTrigger>
-      <childProjects>copy-unagi-stable-to-old-stable-url, copy-unagi-stable-to-new-stable-url</childProjects>
-      <threshold>
-        <name>SUCCESS</name>
-        <ordinal>0</ordinal>
-        <color>BLUE</color>
-      </threshold>
-    </hudson.tasks.BuildTrigger>
+    <jenkins.plugins.publish__over__ssh.BapSshPublisherPlugin plugin="publish-over-ssh@1.7">
+      <consolePrefix>SSH: </consolePrefix>
+      <delegate>
+        <publishers>
+          <jenkins.plugins.publish__over__ssh.BapSshPublisher>
+            <configName>updates.boo2gecko.org/stable</configName>
+            <verbose>false</verbose>
+            <transfers>
+              <jenkins.plugins.publish__over__ssh.BapSshTransfer>
+                <remoteDirectory></remoteDirectory>
+                <sourceFiles>b2g_stable*, application*</sourceFiles>
+                <excludes></excludes>
+                <removePrefix></removePrefix>
+                <remoteDirectorySDF>false</remoteDirectorySDF>
+                <flatten>false</flatten>
+                <cleanRemote>false</cleanRemote>
+                <execCommand>cd /data/update-channels/stable &amp;&amp; bash makeupdate.sh</execCommand>
+                <execTimeout>120000</execTimeout>
+                <usePty>false</usePty>
+              </jenkins.plugins.publish__over__ssh.BapSshTransfer>
+            </transfers>
+            <useWorkspaceInPromotion>false</useWorkspaceInPromotion>
+            <usePromotionTimestamp>false</usePromotionTimestamp>
+          </jenkins.plugins.publish__over__ssh.BapSshPublisher>
+          <jenkins.plugins.publish__over__ssh.BapSshPublisher>
+            <configName>stage.mozilla.org</configName>
+            <verbose>false</verbose>
+            <transfers>
+              <jenkins.plugins.publish__over__ssh.BapSshTransfer>
+                <remoteDirectory></remoteDirectory>
+                <sourceFiles>unagi*.zip</sourceFiles>
+                <excludes></excludes>
+                <removePrefix></removePrefix>
+                <remoteDirectorySDF>false</remoteDirectorySDF>
+                <flatten>false</flatten>
+                <cleanRemote>false</cleanRemote>
+                <execCommand>chmod -R a+r /mnt/netapp/stage/releases.mozilla.com/b2g/*
+python organize.py --directory /mnt/netapp/stage/releases.mozilla.com/b2g</execCommand>
+                <execTimeout>120000</execTimeout>
+                <usePty>false</usePty>
+              </jenkins.plugins.publish__over__ssh.BapSshTransfer>
+            </transfers>
+            <useWorkspaceInPromotion>false</useWorkspaceInPromotion>
+            <usePromotionTimestamp>false</usePromotionTimestamp>
+          </jenkins.plugins.publish__over__ssh.BapSshPublisher>
+          <jenkins.plugins.publish__over__ssh.BapSshPublisher>
+            <configName>stage/promoted</configName>
+            <verbose>false</verbose>
+            <transfers>
+              <jenkins.plugins.publish__over__ssh.BapSshTransfer>
+                <remoteDirectory></remoteDirectory>
+                <sourceFiles>nightly*</sourceFiles>
+                <excludes></excludes>
+                <removePrefix></removePrefix>
+                <remoteDirectorySDF>false</remoteDirectorySDF>
+                <flatten>false</flatten>
+                <cleanRemote>false</cleanRemote>
+                <execCommand>chmod a+r /mnt/netapp/stage/releases.mozilla.com/b2g/promoted_to_stable/*</execCommand>
+                <execTimeout>120000</execTimeout>
+                <usePty>false</usePty>
+              </jenkins.plugins.publish__over__ssh.BapSshTransfer>
+            </transfers>
+            <useWorkspaceInPromotion>false</useWorkspaceInPromotion>
+            <usePromotionTimestamp>false</usePromotionTimestamp>
+          </jenkins.plugins.publish__over__ssh.BapSshPublisher>
+        </publishers>
+        <continueOnError>false</continueOnError>
+        <failOnError>false</failOnError>
+        <alwaysPublishFromMaster>false</alwaysPublishFromMaster>
+        <hostConfigurationAccess class="jenkins.plugins.publish_over_ssh.BapSshPublisherPlugin" reference="../.."/>
+      </delegate>
+    </jenkins.plugins.publish__over__ssh.BapSshPublisherPlugin>
   </publishers>
   <buildWrappers/>
 </project>

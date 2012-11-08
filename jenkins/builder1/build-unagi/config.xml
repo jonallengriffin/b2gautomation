@@ -10,11 +10,11 @@
   </logRotator>
   <keepDependencies>false</keepDependencies>
   <properties>
-    <com.coravy.hudson.plugins.github.GithubProjectProperty>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.2">
       <projectUrl>https://github.com/mozilla-b2g/B2G/</projectUrl>
     </com.coravy.hudson.plugins.github.GithubProjectProperty>
   </properties>
-  <scm class="hudson.plugins.git.GitSCM">
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@1.1.18">
     <configVersion>2</configVersion>
     <userRemoteConfigs>
       <hudson.plugins.git.UserRemoteConfig>
@@ -57,7 +57,7 @@
   <triggers class="vector"/>
   <concurrentBuild>false</concurrentBuild>
   <builders>
-    <hudson.plugins.copyartifact.CopyArtifact>
+    <hudson.plugins.copyartifact.CopyArtifact plugin="copyartifact@1.22">
       <projectName>make-config</projectName>
       <filter>config.zip</filter>
       <target></target>
@@ -71,7 +71,7 @@ mkdir config
 unzip -o config.zip -d config
 
 export AUTOCONF=/usr/local/bin/autoconf2.13
-export ANDROIDFS_DIR=/data/unagi/backup-unagi
+export ANDROIDFS_DIR=/data/unagi/backup-unagi2
 ccache --clear
 rm -rf out
 rm -rf objdir-gecko
@@ -88,6 +88,17 @@ cd ..
 
 VARIANT=user ./build.sh
 VARIANT=user ./build.sh gecko-update-full
+VARIANT=user ./build.sh buildsymbols
+
+export POST_SYMBOL_UPLOAD_CMD=/usr/local/bin/post-symbol-upload.py
+export SYMBOL_SERVER_HOST=symbols1.dmz.phx1.mozilla.com
+export SYMBOL_SERVER_PATH=/mnt/netapp/breakpad/symbols_b2g/
+export SYMBOL_SERVER_SSH_KEY=/data/.ssh/id_rsa
+export SYMBOL_SERVER_USER=b2gbld
+export MOZ_SYMBOLS_EXTRA_BUILDID=unagi
+
+source /var/lib/jenkins/.ssh/environment
+VARIANT=user ./build.sh uploadsymbols
 
 if [ ! -d &quot;b2gautomation&quot; ]; then
   git clone git://github.com/jonallengriffin/b2gautomation.git
@@ -108,18 +119,16 @@ mkdir b2g-distro/settings
 cp b2gautomation/b2gautomation/devices/README.txt b2g-distro/
 cp default.xml b2g-distro/default.xml
 cp out/target/product/unagi/*.img b2g-distro/
-cp /data/unagi/boot.img b2g-distro/
+cp /data/unagi/backup-unagi2/boot.img b2g-distro/
 cp out/target/product/unagi/*.txt b2g-distro/
 cp out/host/linux-x86/bin/adb b2g-distro/
 cp out/host/linux-x86/bin/fastboot b2g-distro/
 cp b2gautomation/b2gautomation/devices/unagi/* b2g-distro/
-cp -R gaia/profile/indexedDB/chrome/2588645841ssegtnti b2g-distro/settings/
-cp gaia/profile/indexedDB/chrome/2588645841ssegtnti.sqlite b2g-distro/settings/
 
 rm -rf package.zip
 zip -r package.zip b2g-distro/
 
-rm -rf unagi_*
+rm -rf unagi*
 TIMESTAMP=`cat config/timestamp.txt`
 DEST=&quot;unagi_${TIMESTAMP}.zip&quot;
 rm -rf $DEST
@@ -132,9 +141,13 @@ rm -rf b2g_update*
 STAMP=`date +%Y-%m-%d_%H%M%S`
 cp objdir-gecko/dist/b2g-update/b2g-gecko-update.mar &quot;b2g_update_${STAMP}.mar&quot;
 cp default.xml &quot;b2g_update_source_${STAMP}.xml&quot;
+
+rm -rf application*
+cp objdir-gecko/dist/b2g/application.ini application_${STAMP}.ini
+
 </command>
     </hudson.tasks.Shell>
-    <jenkins.plugins.publish__over__ssh.BapSshBuilderPlugin>
+    <jenkins.plugins.publish__over__ssh.BapSshBuilderPlugin plugin="publish-over-ssh@1.7">
       <delegate>
         <consolePrefix>SSH: </consolePrefix>
         <delegate>
@@ -145,7 +158,7 @@ cp default.xml &quot;b2g_update_source_${STAMP}.xml&quot;
               <transfers>
                 <jenkins.plugins.publish__over__ssh.BapSshTransfer>
                   <remoteDirectory></remoteDirectory>
-                  <sourceFiles>unagi_*.zip</sourceFiles>
+                  <sourceFiles>unagi*.zip</sourceFiles>
                   <excludes></excludes>
                   <removePrefix></removePrefix>
                   <remoteDirectorySDF>false</remoteDirectorySDF>
@@ -166,7 +179,7 @@ python organize.py --directory /mnt/netapp/stage/releases.mozilla.com/b2g</execC
               <transfers>
                 <jenkins.plugins.publish__over__ssh.BapSshTransfer>
                   <remoteDirectory></remoteDirectory>
-                  <sourceFiles>b2g_update*</sourceFiles>
+                  <sourceFiles>b2g_update*,application*</sourceFiles>
                   <excludes></excludes>
                   <removePrefix></removePrefix>
                   <remoteDirectorySDF>false</remoteDirectorySDF>
@@ -191,7 +204,7 @@ python organize.py --directory /mnt/netapp/stage/releases.mozilla.com/b2g</execC
   </builders>
   <publishers>
     <hudson.tasks.ArtifactArchiver>
-      <artifacts>b2g_update*.xml</artifacts>
+      <artifacts>b2g_update*.xml,unagi*</artifacts>
       <latestOnly>false</latestOnly>
     </hudson.tasks.ArtifactArchiver>
   </publishers>

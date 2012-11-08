@@ -1,0 +1,69 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <logRotator>
+    <daysToKeep>-1</daysToKeep>
+    <numToKeep>10</numToKeep>
+    <artifactDaysToKeep>-1</artifactDaysToKeep>
+    <artifactNumToKeep>-1</artifactNumToKeep>
+  </logRotator>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers class="vector"/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>rm -rf application*
+rm -rf b2g*</command>
+    </hudson.tasks.Shell>
+    <hudson.plugins.copyartifact.CopyArtifact plugin="copyartifact@1.22">
+      <projectName>build-unagi-stable</projectName>
+      <filter>*</filter>
+      <target></target>
+      <selector class="hudson.plugins.copyartifact.TriggeredBuildSelector">
+        <fallbackToLastSuccessful>true</fallbackToLastSuccessful>
+      </selector>
+    </hudson.plugins.copyartifact.CopyArtifact>
+    <hudson.tasks.Shell>
+      <command>SERVER=&quot;ec2-user@ec2-184-73-70-191.compute-1.amazonaws.com&quot;
+SSHKEY=&quot;/data/jenkins/keys/update2&quot;
+SSHCMD=&quot;ssh -i $SSHKEY $SERVER&quot;
+SCPCMD=&quot;scp -i $SSHKEY&quot;
+SERVER_ROOT=&quot;/data/update-channels&quot;
+
+# Find the most recent ini file on the update server.
+MOSTRECENT=$($SSHCMD find $SERVER_ROOT/unagi -type f -name &quot;*ini&quot; -printf &quot;%T@\\ %p\\\\\\n&quot; | sort -n | tail -1 | cut -f2 -d&quot; &quot;)
+
+# Grep the version and buildid from this file.
+BUILDID=$($SSHCMD grep BuildID= $MOSTRECENT | sed &apos;s/BuildID=//&apos;)
+VERSION=$($SSHCMD grep ^Version= $MOSTRECENT | sed &apos;s/Version=//&apos;)
+
+# Create the necessary directories on the update server.
+UPDATEDIR=&quot;$SERVER_ROOT/stable/unagi1/$VERSION/$BUILDID&quot;
+$SSHCMD mkdir -p $UPDATEDIR
+
+# Copy the files to the update server
+$SCPCMD application* $SERVER:$UPDATEDIR
+$SCPCMD *mar $SERVER:$UPDATEDIR
+
+if [ ! -d &quot;b2gautomation&quot; ]; then
+  git clone git://github.com/jonallengriffin/b2gautomation.git
+fi
+cd b2gautomation
+git pull
+cd ..
+
+$SCPCMD b2gautomation/updates/unagi/* $SERVER:$UPDATEDIR
+
+$SSHCMD &quot;cd $UPDATEDIR &amp;&amp; ./makeupdate.sh&quot;</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers/>
+  <buildWrappers/>
+</project>

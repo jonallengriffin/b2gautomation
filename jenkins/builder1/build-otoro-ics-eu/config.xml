@@ -113,8 +113,6 @@ cp out/target/product/otoro/*.txt b2g-distro/
 cp out/host/linux-x86/bin/adb b2g-distro/
 cp out/host/linux-x86/bin/fastboot b2g-distro/
 cp b2gautomation/b2gautomation/devices/otoro/* b2g-distro/
-cp -R gaia/profile/indexedDB/chrome/2588645841ssegtnti b2g-distro/settings/
-cp gaia/profile/indexedDB/chrome/2588645841ssegtnti.sqlite b2g-distro/settings/
 
 rm -rf package.zip
 zip -r package.zip b2g-distro/
