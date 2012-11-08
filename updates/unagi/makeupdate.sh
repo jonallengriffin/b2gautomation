@@ -5,7 +5,7 @@ INI="application_${DATESTAMP}.ini"
 BUILD_ID=$(grep BuildID= $INI | sed 's/BuildID=//')
 SIZE=$(stat -c "%s" $FILE)
 APPVERSION=$(grep ^Version= $INI | sed 's/Version=//')
-VERSION=$(grep ^MinVersion= $INI | sed 's/MinVersion//')
+VERSION=$(grep ^MinVersion= $INI | sed 's/MinVersion=//')
 DIR=$(pwd | sed 's/\/data\/update-channels\///' | sed s'/\//\\\//g')
 UPDATENAME="update_$DATESTAMP.xml"
 
