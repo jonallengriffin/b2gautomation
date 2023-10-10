@@ -11,7 +11,7 @@ except (OSError, IOError):
     description = 'b2g automation scripts'
 
 # dependencies
-deps = ['GitPython == 0.3.2.RC1', 'mozprocess']
+deps = ['GitPython == 3.1.37', 'mozprocess']
 
 setup(name='b2gautomation',
       version=version,
